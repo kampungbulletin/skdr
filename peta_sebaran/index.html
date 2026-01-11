@@ -10,21 +10,16 @@
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
         <link rel="stylesheet" href="css/leaflet.photon.css">
-		<style>
-		html, body {
-		    width: 100%;
-		    height: 100%;
-		    margin: 0;
-		    padding: 0;
-		}
-		
-		#map {
-		    width: 100%;
-		    height: 100vh; /* FULL TINGGI LAYAR */
-		}
-		</style>
-
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
         <title></title>
     </head>
     <body>
@@ -42,18 +37,20 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet.photon.js"></script>
+        <script src="js/leaflet-search.js"></script>
         <script src="data/GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1.js"></script>
         <script src="data/PerbatasanAntarKelurarahanDalamBugisdanTanjungHilir_2.js"></script>
         <script src="data/UPTPUSKESMASKAMPUNGDALAM_3.js"></script>
         <script src="data/Sekolah_4.js"></script>
         <script>
-			
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+            highlightLayer.openPopup();
+        }
         var map = L.map('map', {
-    zoomControl:false, maxZoom:28, minZoom:1
-}).fitBounds([[-0.04379186910651883,109.33930890696881],[-0.010901006313785634,109.3740064532563]]);
-			setTimeout(function () {
-    map.invalidateSize();
-}, 100);
+            zoomControl:false, maxZoom:28, minZoom:15
+        }).fitBounds([[-0.03878561728699219,109.34459748956871],[-0.020796051230338175,109.36917099476393]]);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -124,20 +121,32 @@
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
         }
-        map.createPane('pane_DarkMatternolabelsretina_0');
-        map.getPane('pane_DarkMatternolabelsretina_0').style.zIndex = 400;
-        var layer_DarkMatternolabelsretina_0 = L.tileLayer('https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png', {
-            pane: 'pane_DarkMatternolabelsretina_0',
+        map.createPane('pane_Positronnolabelsretina_0');
+        map.getPane('pane_Positronnolabelsretina_0').style.zIndex = 400;
+        var layer_Positronnolabelsretina_0 = L.tileLayer('https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png', {
+            pane: 'pane_Positronnolabelsretina_0',
             opacity: 1.0,
             attribution: '<a href="https://cartodb.com/basemaps/">Map tiles by CartoDB, under CC BY 3.0. Data by OpenStreetMap, under ODbL.</a>',
-            minZoom: 1,
+            minZoom: 15,
             maxZoom: 28,
             minNativeZoom: 0,
             maxNativeZoom: 20
         });
-        layer_DarkMatternolabelsretina_0;
-        map.addLayer(layer_DarkMatternolabelsretina_0);
+        layer_Positronnolabelsretina_0;
+        map.addLayer(layer_Positronnolabelsretina_0);
         function pop_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
             var popupContent = '<table>\
                     <tr>\
                         <td colspan="2">' + (feature.properties['RW'] !== null ? autolinker.link(String(feature.properties['RW']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
@@ -164,11 +173,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(76,255,39,1.0)',
@@ -179,11 +188,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(254,220,205,1.0)',
@@ -194,11 +203,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(252,179,152,1.0)',
@@ -209,11 +218,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(252,134,102,1.0)',
@@ -224,11 +233,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(246,87,62,1.0)',
@@ -239,11 +248,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(221,42,37,1.0)',
@@ -254,11 +263,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(179,18,24,1.0)',
@@ -269,11 +278,11 @@
                     return {
                 pane: 'pane_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 1, 
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(103,0,13,1.0)',
@@ -297,6 +306,18 @@
         bounds_group.addLayer(layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1);
         map.addLayer(layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1);
         function pop_PerbatasanAntarKelurarahanDalamBugisdanTanjungHilir_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
             var popupContent = '<table>\
                     <tr>\
                         <td colspan="2">' + (feature.properties['NAMA JALAN'] !== null ? autolinker.link(String(feature.properties['NAMA JALAN']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
@@ -317,7 +338,7 @@
                 dashArray: '',
                 lineCap: 'round',
                 lineJoin: 'round',
-                weight: 9.0,
+                weight: 1.0,
                 fillOpacity: 0,
                 interactive: true,
             }
@@ -326,7 +347,7 @@
             return {
                 pane: 'pane_PerbatasanAntarKelurarahanDalamBugisdanTanjungHilir_2',
                 opacity: 1,
-                color: 'rgba(255,166,0,1.0)',
+                color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
                 lineCap: 'round',
                 lineJoin: 'round',
@@ -350,6 +371,18 @@
         bounds_group.addLayer(layer_PerbatasanAntarKelurarahanDalamBugisdanTanjungHilir_2);
         map.addLayer(layer_PerbatasanAntarKelurarahanDalamBugisdanTanjungHilir_2);
         function pop_UPTPUSKESMASKAMPUNGDALAM_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
             var popupContent = '<table>\
                     <tr>\
                         <td colspan="2">' + (feature.properties['Lokasi'] !== null ? autolinker.link(String(feature.properties['Lokasi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
@@ -365,7 +398,7 @@
         function style_UPTPUSKESMASKAMPUNGDALAM_3_0() {
             return {
                 pane: 'pane_UPTPUSKESMASKAMPUNGDALAM_3',
-                radius: 2.8,
+                radius: 7.6,
                 opacity: 1,
                 color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
@@ -399,6 +432,18 @@
         bounds_group.addLayer(layer_UPTPUSKESMASKAMPUNGDALAM_3);
         map.addLayer(layer_UPTPUSKESMASKAMPUNGDALAM_3);
         function pop_Sekolah_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
             var popupContent = '<table>\
                     <tr>\
                         <td colspan="2">' + (feature.properties['Nama Sekol'] !== null ? autolinker.link(String(feature.properties['Nama Sekol']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
@@ -414,7 +459,7 @@
         function style_Sekolah_4_0() {
             return {
                 pane: 'pane_Sekolah_4',
-                radius: 2.4,
+                radius: 7.6,
                 opacity: 1,
                 color: 'rgba(255,255,255,1.0)',
                 dashArray: '',
@@ -447,16 +492,64 @@
         });
         bounds_group.addLayer(layer_Sekolah_4);
         map.addLayer(layer_Sekolah_4);
-        setBounds();
-        resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_Sekolah_4]);
         map.on("zoomend", function(){
-            resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_Sekolah_4]);
+
+                if (map.hasLayer(layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1)) {
+                    if (map.getZoom() <= 14 && map.getZoom() >= 19) {
+                        layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1.eachLayer(function (layer) {
+                            layer.openTooltip();
+                        });
+                    } else {
+                        layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1.eachLayer(function (layer) {
+                            layer.closeTooltip();
+                        });
+                    }
+                }
+        });
+        setBounds();
+        var i = 0;
+        layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['RW'] !== null?String('<div style="color: #ffffff; font-size: 9pt; font-weight: bold; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['RW']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+                if (map.hasLayer(layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1)) {
+                    if (map.getZoom() <= 14 && map.getZoom() >= 19) {
+                        layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1.eachLayer(function (layer) {
+                            layer.openTooltip();
+                        });
+                    } else {
+                        layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1.eachLayer(function (layer) {
+                            layer.closeTooltip();
+                        });
+                    }
+                }
+        map.addControl(new L.Control.Search({
+            layer: layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'RW'}));
+        if (typeof url === 'undefined') {
+            document.getElementsByClassName('search-button')[0].className += ' fa fa-binoculars';
+        } else {
+            document.getElementsByClassName('search-button')[1].className += ' fa fa-binoculars';
+        }
+        resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_UPTPUSKESMASKAMPUNGDALAM_3,layer_Sekolah_4]);
+        map.on("zoomend", function(){
+            resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_UPTPUSKESMASKAMPUNGDALAM_3,layer_Sekolah_4]);
         });
         map.on("layeradd", function(){
-            resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_Sekolah_4]);
+            resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_UPTPUSKESMASKAMPUNGDALAM_3,layer_Sekolah_4]);
         });
         map.on("layerremove", function(){
-            resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_Sekolah_4]);
+            resetLabels([layer_GABUNGANDALAMBUGISDANTANJUNGHILIRcopy_1,layer_UPTPUSKESMASKAMPUNGDALAM_3,layer_Sekolah_4]);
         });
         </script>        
     </body>
