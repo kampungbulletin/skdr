@@ -275,14 +275,7 @@
 </head>
 <body>
 
-    <div class="no-print fixed bottom-8 right-8 z-50">
-        <button onclick="window.print()" class="group flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl transition-all transform hover:scale-105 active:scale-95">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            <span class="font-semibold tracking-wide">Cetak Dokumen</span>
-        </button>
-    </div>
+
 
     <div class="page-a4">
         
@@ -1637,43 +1630,101 @@ if (pageNum === 3) {
                         Visualisasi spasial berbasis data per RW
                     </p>
                 </div>
-
-                <div class="flex flex-col items-end gap-1">
-                     <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Indikator Peta</span>
-                     <div class="flex gap-1">
-                        <span class="px-2 py-1 rounded bg-rose-600 text-white text-[9px] font-bold">Padat (>2)</span>
-                        <span class="px-2 py-1 rounded bg-rose-300 text-rose-800 text-[9px] font-bold">Sedang (1-2)</span>
-                        <span class="px-2 py-1 rounded bg-emerald-500 text-white text-[9px] font-bold">Aman (0)</span>
-                     </div>
-                </div>
+                
+                <div></div>
             </div>
 
             <div class="relative w-full flex-1 min-h-[400px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-lg group">
                 
-                <div class="absolute top-4 right-4 z-20 w-56 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg p-3">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-2">
-                        <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
-                            <svg class="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path></svg>
-                            Hotspot Tertinggi
-                        </span>
-                    </div>
-                    
-                    <div id="mapTopHotspots" class="space-y-2 min-h-[60px] flex flex-col justify-center">
-                         <div class="text-[10px] text-slate-400 text-center animate-pulse">Memuat data RW...</div>
-                    </div>
-                </div>
+<div class="absolute top-4 right-4 z-20 w-56 flex flex-col gap-3">
+              
+                  <div id="hotspotCard" class="bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg transition-all duration-300 overflow-hidden" style="max-height: 42px;">
+                        <div class="flex justify-between items-center p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleHotspot()">
+                            <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                                <svg class="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path></svg>
+                                Hotspot Tertinggi
+                            </span>
+                            <button class="text-slate-400 hover:text-indigo-600 transition-colors">
+                                <svg id="hotspotIcon" class="w-4 h-4 transform transition-transform duration-300 rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="mapTopHotspots" class="p-3 space-y-2 min-h-[60px] flex flex-col justify-center bg-white/50">
+                             <div class="text-[10px] text-slate-400 text-center animate-pulse">Memuat data RW...</div>
+                        </div>
+                  </div>
 
-                <div class="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200 shadow-sm flex gap-4">
-                     <div class="flex flex-col">
-                        <span class="text-[9px] text-slate-400 font-bold uppercase">Total Kasus</span>
-                        <span id="mapTotalCases" class="text-sm font-black text-indigo-600">-</span>
-                     </div>
-                     <div class="w-px bg-slate-200"></div>
-                     <div class="flex flex-col">
-                        <span class="text-[9px] text-slate-400 font-bold uppercase">RW Terdampak</span>
-                        <span id="mapAffectedRW" class="text-sm font-black text-rose-500">-</span>
-                     </div>
-                </div>
+                  <div id="legendCard" class="bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg transition-all duration-300 overflow-hidden" style="max-height: 42px;">
+                        <div class="flex justify-between items-center p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleLegend()">
+                            <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0121 18.382V7.618a1 1 0 01-.806-.98l-3.747-1.873M15 7l-5-2.5"></path></svg>
+                                Legenda Peta
+                            </span>
+                            <button class="text-slate-400 hover:text-indigo-600 transition-colors">
+                                <svg id="legendIcon" class="w-4 h-4 transform transition-transform duration-300 rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div class="p-3 flex flex-col gap-2.5 bg-white/50">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 rounded-full bg-blue-500 border border-white shadow-sm ring-1 ring-blue-200"></div>
+                                <span class="text-[9px] font-bold text-slate-600">Sekolah</span>
+                            </div>
+<div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 rounded-full bg-red-600 border border-white shadow-sm ring-1 ring-red-200"></div>
+                                <span class="text-[9px] font-bold text-slate-600">UPT Puskesmas</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 bg-white border border-slate-900 shadow-sm"></div>
+                                <span class="text-[9px] font-bold text-slate-600">Batas Kelurahan</span>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-200 mt-1">
+                                <div class="text-[8px] text-slate-400 font-bold mb-1.5 uppercase tracking-wider">Kepadatan Kasus</div>
+                                
+                                <div class="flex h-3 w-full rounded overflow-hidden ring-1 ring-slate-200/50 shadow-sm">
+                                    <div style="background:#fee2e2" class="flex-1" title="0"></div>
+                                    <div style="background:#ffcaca" class="flex-1"></div>
+                                    <div style="background:#fca5a5" class="flex-1"></div>
+                                    <div style="background:#f87171" class="flex-1"></div>
+                                    <div style="background:#ef4444" class="flex-1"></div>
+                                    <div style="background:#b91c1c" class="flex-1"></div>
+                                    <div style="background:#7f1d1d" class="flex-1" title="Tinggi"></div>
+                                </div>
+                                <div class="flex justify-between text-[7px] text-slate-400 font-bold mt-1 uppercase">
+                                    <span>Rendah</span>
+                                    <span>Tinggi</span>
+                                </div>
+                            </div>
+                        </div>
+                  </div>
+                  
+              </div>
+
+<div class="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-xl py-2 px-4 rounded-xl border border-white/60 shadow-xl flex gap-6 items-center min-w-[200px]">
+    
+    <div class="flex flex-col">
+        <div class="flex items-center gap-1.5 mb-0.5">
+            <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Total Kasus</span>
+        </div>
+        <span id="mapTotalCases" class="text-2xl font-black text-slate-800 leading-none">-</span>
+    </div>
+    
+    <div class="h-6 w-px bg-slate-200"></div>
+    
+    <div class="flex flex-col">
+        <div class="flex items-center gap-1.5 mb-0.5">
+            <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">RW Terdampak</span>
+        </div>
+        <span id="mapAffectedRW" class="text-2xl font-black text-rose-600 leading-none">-</span>
+    </div>
+
+</div>
 
                 <iframe 
                     src="./peta_sebaran/index.html" 
@@ -2974,6 +3025,32 @@ function generateIDLInterpretation(elemId, labels, values, locName) {
 
     el.innerHTML = narasi;
 }
+
+// Fungsi untuk Minimize/Maximize Kartu Hotspot
+        function toggleHotspot() {
+            const card = document.getElementById('hotspotCard');
+            const icon = document.getElementById('hotspotIcon');
+            if (card.style.maxHeight === '42px') {
+                card.style.maxHeight = '500px'; 
+                icon.style.transform = 'rotate(180deg)'; 
+            } else {
+                card.style.maxHeight = '42px'; 
+                icon.style.transform = 'rotate(0deg)'; 
+            }
+        }
+
+        // Fungsi untuk Minimize/Maximize Kartu Legenda (BARU)
+        function toggleLegend() {
+            const card = document.getElementById('legendCard');
+            const icon = document.getElementById('legendIcon');
+            if (card.style.maxHeight === '42px') {
+                card.style.maxHeight = '500px'; 
+                icon.style.transform = 'rotate(180deg)'; 
+            } else {
+                card.style.maxHeight = '42px'; 
+                icon.style.transform = 'rotate(0deg)'; 
+            }
+        }
 
 function updateMapOverlay() {
     // 1. Ambil elemen target di DOM
