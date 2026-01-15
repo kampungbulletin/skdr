@@ -148,9 +148,9 @@
     transition: all 0.3s ease;
 }
 
-/* --- TAMBAHAN UNTUK MINIMIZE --- */
+/* --- TAMBAHAN UNTUK MINIMIZE & ANIMASI --- */
 .toggle-btn {
-    margin-left: auto; /* Dorong ke kanan mentok */
+    margin-left: auto;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -158,40 +158,51 @@
     font-size: 14px;
     transition: transform 0.3s ease;
     padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Wrapper untuk isi legenda agar bisa di-animasi */
-.legend-body-wrapper {
-    max-height: 500px; /* Angka cukup besar agar muat semua */
+/* Wrapper Generik untuk Isi (Filter & Legenda) */
+section-body {
+    max-height: 500px;
     opacity: 1;
-    overflow: hidden; /* Penting untuk efek slide */
+    overflow: hidden;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-top: 10px;
-}
-
-/* State ketika Minimized */
-.sidebar-container.minimized .legend-body-wrapper {
-    max-height: 0;
-    opacity: 0;
+    
+    /* PINDAHKAN JARAK KE SINI */
+    padding-top: 15px;    /* Ini pengganti margin-bottom header */
     margin-top: 0;
 }
 
-.sidebar-container.minimized .toggle-btn {
-    transform: rotate(180deg); /* Putar panahnya */
+/* State ketika Minimized (Tertutup) */
+.section-body.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    
+    /* HILANGKAN PADDING SAAT TUTUP */
+    padding-top: 0;       
+    padding-bottom: 0;
+    pointer-events: none;
+}
+
+/* Rotasi Panah */
+/* Default (class .rotated ada) = Panah Menghadap Bawah (Posisi Tertutup) */
+.toggle-btn.rotated {
+    transform: rotate(180deg);
 }
 
         /* Section Styling */
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 16px;
-            margin-top: 8px;
-        }
-        
-        .section-header:first-child {
-            margin-top: 0;
-        }
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* margin-bottom: 16px;  <-- HAPUS INI (Penyebab renggang) */
+    margin-bottom: 0;     /* Ganti jadi 0 */
+    padding: 5px 0;       /* Beri sedikit napas internal */
+    cursor: pointer;      /* Agar user tau ini bisa diklik */
+}
 
         .section-title {
             font-size: 14px;
@@ -477,49 +488,55 @@ path.leaflet-interactive:focus {
 <aside class="sidebar-container glass-panel" id="sidebar">
     <div class="sidebar-content">
         
-<div class="section-header"> 
+        <div class="section-header"> 
             <i class="fas fa-filter" style="color: var(--primary);"></i>
             <span class="section-title">Filter Data</span>
-        </div>
-
-        <div class="filter-group">
-            <span class="filter-label">Pilih Tahun</span>
-            <div class="year-selector">
-                <button class="year-btn" onclick="setYear(2025)">2025</button>
-                <button class="year-btn active" onclick="setYear(2026)">2026</button>
-                <button class="year-btn" onclick="setYear(2027)">2027</button>
-            </div>
-        </div>
-
-        <div class="filter-group">
-            <span class="filter-label">Rentang Minggu (Ke-)</span>
-            <div class="week-range">
-                <input type="number" id="startWeek" class="input-glass" value="1" min="1" max="52" onchange="updateMap()">
-                <span style="font-size: 10px; color: var(--text-light); font-weight: 800;">S/D</span>
-                <input type="number" id="endWeek" class="input-glass" value="52" min="1" max="52" onchange="updateMap()">
-            </div>
-        </div>
-
-        <div class="filter-group">
-            <label class="toggle-row">
-                <span style="font-size: 13px; font-weight: 600;">Hanya Kasus Positif</span>
-                <label class="switch">
-                    <input type="checkbox" id="checkPositif" onchange="updateMap()">
-                    <span class="slider"></span>
-                </label>
-            </label>
-        </div>
-
-        <div style="border-top: 1px solid rgba(0,0,0,0.05); margin: 20px 0;"></div>
-
-        <div class="section-header" style="margin-bottom: 0;"> <i class="fas fa-map" style="color: var(--primary);"></i>
-            <span class="section-title" style="font-size: 14px;">Legenda Peta</span>
-            <button class="toggle-btn" id="toggleLegendBtn" onclick="toggleLegend()">
+            <button class="toggle-btn rotated" id="btnFilter" onclick="toggleSection('filterBody', 'btnFilter')">
                 <i class="fas fa-chevron-up"></i>
             </button>
         </div>
 
-        <div class="legend-body-wrapper">
+        <div id="filterBody" class="section-body collapsed">
+            <div class="filter-group">
+                <span class="filter-label">Pilih Tahun</span>
+                <div class="year-selector">
+                    <button class="year-btn" onclick="setYear(2025)">2025</button>
+                    <button class="year-btn active" onclick="setYear(2026)">2026</button>
+                    <button class="year-btn" onclick="setYear(2027)">2027</button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Rentang Minggu (Ke-)</span>
+                <div class="week-range">
+                    <input type="number" id="startWeek" class="input-glass" value="1" min="1" max="52" onchange="updateMap()">
+                    <span style="font-size: 10px; color: var(--text-light); font-weight: 800;">S/D</span>
+                    <input type="number" id="endWeek" class="input-glass" value="53" min="1" max="53" onchange="updateMap()">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="toggle-row">
+                    <span style="font-size: 13px; font-weight: 600;">Hanya Kasus Positif</span>
+                    <label class="switch">
+                        <input type="checkbox" id="checkPositif" onchange="updateMap()">
+                        <span class="slider"></span>
+                    </label>
+                </label>
+            </div>
+        </div>
+
+<div style="border-top: 1px solid rgba(0,0,0,0.05); margin: 10px 0;"></div>
+
+        <div class="section-header" style="margin-bottom: 0;"> 
+            <i class="fas fa-map" style="color: var(--primary);"></i>
+            <span class="section-title" style="font-size: 14px;">Legenda Peta</span>
+            <button class="toggle-btn rotated" id="btnLegend" onclick="toggleSection('legendBody', 'btnLegend')">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
+
+        <div id="legendBody" class="section-body collapsed">
             <div style="margin-bottom: 15px; padding-top: 15px;">
                 <div class="stat-label" style="margin-bottom: 5px;">Tingkat Kerawanan (Total Kasus)</div>
                 <div class="gradient-legend" style="margin: 5px 0;">
@@ -533,8 +550,7 @@ path.leaflet-interactive:focus {
                 </div>
             </div>
 
-<div class="legend-box" style="padding: 0; border: none; background: transparent;">
-                
+            <div class="legend-box" style="padding: 0; border: none; background: transparent;">
                 <div class="legend-row">
                     <div style="width: 24px; display: flex; justify-content: center; align-items: center; margin-right: 10px;">
                         <div style="background: #10b981; width: 14px; height: 14px; border-radius: 4px;"></div>
@@ -571,9 +587,9 @@ path.leaflet-interactive:focus {
                     </div>
                     <div class="legend-desc">Cagar Budaya</div>
                 </div>
-
             </div>
-        </div> </div>
+        </div> 
+    </div>
 </aside>
 
     <div class="loader-overlay" id="loader">
@@ -784,7 +800,7 @@ path.leaflet-interactive:focus {
             // Hapus label RW lama jika ada
             document.querySelectorAll('.rw-map-label').forEach(el => el.remove());
 
-            // Buat Layer Baru
+// Buat Layer Baru
             geojsonLayer = L.geoJSON(rw_json, {
                 style: function(feature) {
                     var geoKel = feature.properties.Kelurahan.toString().trim().toLowerCase();
@@ -838,8 +854,8 @@ path.leaflet-interactive:focus {
 
                     // Efek Klik (FlyTo)
                     layer.on('click', function(e) {
-                         map.flyTo(e.target.getBounds().getCenter(), 16, { duration: 0.6, easeLinearity: 0.5, noMoveStart: true });
-                         e.target.openTooltip(); 
+                          map.flyTo(e.target.getBounds().getCenter(), 16, { duration: 0.6, easeLinearity: 0.5, noMoveStart: true });
+                          e.target.openTooltip(); 
                     });
 
                     // Tambahkan Label RW (Manual Marker)
@@ -854,6 +870,13 @@ path.leaflet-interactive:focus {
                     }).addTo(map);
                 }
             }).addTo(map);
+
+            // --- PERBAIKAN: PINDAHKAN LAYER RW KE BELAKANG ---
+            // Ini kuncinya: Memaksa layer warna RW (merah/hijau) pindah ke bawah
+            // sehingga garis batas lurah (yang dibuat static di awal) terlihat lagi di atasnya.
+            geojsonLayer.bringToBack(); 
+
+            // Pastikan Peta Zoom ke data jika ini load pertama
 
             // Pastikan Peta Zoom ke data jika ini load pertama
             if (allDataRows.length > 0 && !window.hasZoomed) {
@@ -981,10 +1004,16 @@ path.leaflet-interactive:focus {
         });
         map.fire('zoomend'); // Trigger awal
 
-        // Toggle Sidebar
-        function toggleLegend() {
-            var sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('minimized');
+// Fungsi Toggle Generic untuk Filter & Legenda
+        function toggleSection(bodyId, btnId) {
+            var bodyElement = document.getElementById(bodyId);
+            var btnElement = document.getElementById(btnId);
+            
+            // Toggle class 'collapsed' pada isi (untuk buka/tutup)
+            bodyElement.classList.toggle('collapsed');
+            
+            // Toggle class 'rotated' pada icon (untuk putar panah)
+            btnElement.classList.toggle('rotated');
         }
 
     </script>
