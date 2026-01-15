@@ -89,6 +89,42 @@
             border: 1px solid var(--glass-border);
             box-shadow: var(--glass-shadow);
         }
+
+
+/* --- FILTER STYLING --- */
+        .filter-group { margin-bottom: 20px; }
+        .filter-label { 
+            font-size: 11px; font-weight: 700; color: var(--text-light); 
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;
+        }
+
+        /* Year Pills */
+        .year-selector { display: flex; gap: 8px; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); }
+        .year-btn {
+            flex: 1; border: none; background: transparent; padding: 6px 0;
+            font-family: 'Plus Jakarta Sans'; font-size: 12px; font-weight: 600;
+            color: var(--text-light); border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .year-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        /* Week Inputs */
+        .week-range { display: flex; align-items: center; gap: 8px; }
+        .input-glass {
+            width: 100%; background: rgba(255,255,255,0.5); border: 1px solid rgba(0,0,0,0.1);
+            padding: 8px 12px; border-radius: 10px; font-family: 'Plus Jakarta Sans'; font-weight: 600;
+            color: var(--text-dark); text-align: center; outline: none; transition: all 0.2s;
+        }
+        .input-glass:focus { background: white; border-color: var(--primary); }
+
+        /* Toggle Switch */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; cursor: pointer; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--danger); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
 /* --- GANTI BAGIAN INI --- */
 .sidebar-container {
     position: absolute;
@@ -441,6 +477,41 @@ path.leaflet-interactive:focus {
 <aside class="sidebar-container glass-panel" id="sidebar">
     <div class="sidebar-content">
         
+<div class="section-header"> 
+            <i class="fas fa-filter" style="color: var(--primary);"></i>
+            <span class="section-title">Filter Data</span>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-label">Pilih Tahun</span>
+            <div class="year-selector">
+                <button class="year-btn" onclick="setYear(2025)">2025</button>
+                <button class="year-btn active" onclick="setYear(2026)">2026</button>
+                <button class="year-btn" onclick="setYear(2027)">2027</button>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-label">Rentang Minggu (Ke-)</span>
+            <div class="week-range">
+                <input type="number" id="startWeek" class="input-glass" value="1" min="1" max="52" onchange="updateMap()">
+                <span style="font-size: 10px; color: var(--text-light); font-weight: 800;">S/D</span>
+                <input type="number" id="endWeek" class="input-glass" value="52" min="1" max="52" onchange="updateMap()">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label class="toggle-row">
+                <span style="font-size: 13px; font-weight: 600;">Hanya Kasus Positif</span>
+                <label class="switch">
+                    <input type="checkbox" id="checkPositif" onchange="updateMap()">
+                    <span class="slider"></span>
+                </label>
+            </label>
+        </div>
+
+        <div style="border-top: 1px solid rgba(0,0,0,0.05); margin: 20px 0;"></div>
+
         <div class="section-header" style="margin-bottom: 0;"> <i class="fas fa-map" style="color: var(--primary);"></i>
             <span class="section-title" style="font-size: 14px;">Legenda Peta</span>
             <button class="toggle-btn" id="toggleLegendBtn" onclick="toggleLegend()">
@@ -580,16 +651,21 @@ path.leaflet-interactive:focus {
             ]
         };
 
-        // --- MAP INITIALIZATION ---
+// ... (KODE DATA GEOJSON rw_json, sekolah_json, lurah_json BIARKAN ADA DI ATAS SINI) ...
+
+        // =========================================================================
+        // BAGIAN 1: INISIALISASI PETA DASAR
+        // =========================================================================
+        
         var map = L.map('map', { 
-            zoomControl: false, // Kita buat custom zoom nanti jika perlu, atau andalkan scroll/pinch
+            zoomControl: false,
             zoomAnimation: true,
             fadeAnimation: true,
             markerZoomAnimation: true,
             attributionControl: false
         }).setView([-0.027, 109.35], 14);
 
-        // Tile Layer: Light & Clean (CartoDB Positron) untuk kontras terbaik dengan Glassmorphism
+        // Tile Layer (Peta Dasar)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 20,
             subdomains: 'abcd'
@@ -597,38 +673,199 @@ path.leaflet-interactive:focus {
 
         L.control.attribution({position: 'bottomright'}).addTo(map);
 
-        // --- LOGIC ---
-        var geojsonLayer = null;
+        // =========================================================================
+        // BAGIAN 2: VARIABEL & FUNGSI FILTER
+        // =========================================================================
+
+        var allDataRows = []; // Wadah untuk menyimpan semua data mentah dari CSV
+        var currentYear = 2026; // Default Tahun
+        var geojsonLayer = null; // Wadah layer RW agar bisa dihapus/gambar ulang
         var maxSuspek = 0; 
-        var minSuspek = Infinity; // Mencari angka kasus terkecil (>0)
+        var minSuspek = Infinity;
 
-        // Color Helper (Dinamis: Kasus Terkecil -> Merah Terang, Kasus Tertinggi -> Merah Gelap)
-function getSuspekColor(jumlahSuspek) {
-    if (jumlahSuspek === 0) return '#10b981'; // Tetap Hijau jika 0
-    
-    // Gradasi merah muda terang -> merah gelap
-    // Hitung posisi relatif antara minSuspek dan maxSuspek
-    var position = 0;
-    if (maxSuspek > minSuspek) {
-        position = (jumlahSuspek - minSuspek) / (maxSuspek - minSuspek);
-    }
-    
-    // Warna dari merah muda terang (#ffb3b3) ke merah gelap (#990000)
-    // Menggunakan gradasi yang lebih smooth
-    if (position < 0.2) return '#ffcccc'; // Merah muda sangat terang
-    if (position < 0.4) return '#ff9999'; // Merah muda terang
-    if (position < 0.6) return '#ff6666'; // Merah muda
-    if (position < 0.8) return '#ff3333'; // Merah terang
-    return '#990000'; // Merah gelap untuk kasus tertinggi
-}
+        // Variable Nama Kolom (akan dideteksi otomatis nanti)
+        var colRW, colKel, colKlas, colTahun, colMinggu;
 
-        function getRiskInfo(jumlahSuspek) {
-            if (jumlahSuspek === 0) return { label: 'AMAN', class: 'risk-low' };
-            if (jumlahSuspek <= 4) return { label: 'MENENGAH', class: 'risk-medium' };
-            return { label: 'TINGGI', class: 'risk-high' };
+        // Fungsi Warna Gradasi Merah
+        function getSuspekColor(jumlahSuspek) {
+            if (jumlahSuspek === 0) return '#10b981'; // Hijau
+            
+            var position = 0;
+            if (maxSuspek > minSuspek) {
+                position = (jumlahSuspek - minSuspek) / (maxSuspek - minSuspek);
+            }
+            if (position < 0.2) return '#ffcccc';
+            if (position < 0.4) return '#ff9999';
+            if (position < 0.6) return '#ff6666';
+            if (position < 0.8) return '#ff3333';
+            return '#990000';
         }
 
-// --- LOAD DATA ---
+        // Fungsi Ganti Tahun (Dipanggil tombol HTML)
+        function setYear(year) {
+            currentYear = year;
+            // Update tampilan tombol aktif
+            document.querySelectorAll('.year-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.innerText == year) btn.classList.add('active');
+            });
+            updateMap(); // Gambar ulang peta
+        }
+
+        // =========================================================================
+        // BAGIAN 3: LOGIKA UTAMA (UPDATE MAP)
+        // =========================================================================
+
+        function updateMap() {
+            // 1. Ambil Nilai Filter dari Input HTML
+            var startWeekElem = document.getElementById('startWeek');
+            var endWeekElem = document.getElementById('endWeek');
+            var checkPositifElem = document.getElementById('checkPositif');
+
+            // Cek element ada atau tidak (untuk menghindari error jika HTML belum diupdate)
+            var startW = startWeekElem ? (parseInt(startWeekElem.value) || 1) : 1;
+            var endW = endWeekElem ? (parseInt(endWeekElem.value) || 52) : 52;
+            var onlyPositif = checkPositifElem ? checkPositifElem.checked : false;
+
+            // 2. Filter Data & Hitung Statistik Baru
+            var dataStats = {};
+            maxSuspek = 0;
+            minSuspek = Infinity;
+
+            allDataRows.forEach(function(baris) {
+                // Ambil value kolom
+                var rowRW = colRW ? baris[colRW] : null;
+                var rowKel = colKel ? baris[colKel] : null;
+                var rowTahun = colTahun ? baris[colTahun] : null;
+                var rowMinggu = colMinggu ? baris[colMinggu] : 0;
+                var rowKlas = colKlas ? baris[colKlas] : "";
+
+                if (rowRW && rowKel) {
+                    // --- LOGIKA FILTERING ---
+                    
+                    // A. Filter Tahun
+                    if (colTahun && parseInt(rowTahun) !== currentYear) return; 
+
+                    // B. Filter Minggu (Bersihkan text "Minggu 1" jadi angka 1)
+                    var cleanMinggu = parseInt(rowMinggu.toString().replace(/\D/g, '')) || 0;
+                    if (colMinggu && (cleanMinggu < startW || cleanMinggu > endW)) return;
+
+                    // C. Filter Positif Only
+                    var isPositif = rowKlas && rowKlas.toString().toLowerCase().includes("positif");
+                    if (onlyPositif && !isPositif) return;
+
+                    // --- JIKA LOLOS FILTER, MASUKKAN KE STATISTIK ---
+                    var normKel = rowKel.toString().trim().toLowerCase();
+                    var normRW = parseInt(rowRW).toString();
+                    var uniqueID = normKel + "_" + normRW;
+
+                    if (!dataStats[uniqueID]) {
+                        dataStats[uniqueID] = { suspek: 0, positif: 0 };
+                    }
+
+                    dataStats[uniqueID].suspek += 1;
+                    if (isPositif) dataStats[uniqueID].positif += 1;
+                }
+            });
+
+            // Hitung Max/Min baru untuk pewarnaan dinamis
+            Object.keys(dataStats).forEach(function(key) {
+                var val = dataStats[key].suspek;
+                if (val > maxSuspek) maxSuspek = val;
+                if (val > 0 && val < minSuspek) minSuspek = val;
+            });
+            if (minSuspek === Infinity) minSuspek = 0;
+
+            // 3. Update Tampilan Layer Peta
+            
+            // Hapus layer lama jika ada
+            if (geojsonLayer) map.removeLayer(geojsonLayer);
+            
+            // Hapus label RW lama jika ada
+            document.querySelectorAll('.rw-map-label').forEach(el => el.remove());
+
+            // Buat Layer Baru
+            geojsonLayer = L.geoJSON(rw_json, {
+                style: function(feature) {
+                    var geoKel = feature.properties.Kelurahan.toString().trim().toLowerCase();
+                    var geoRW = parseInt(feature.properties.RW).toString();
+                    var uniqueID = geoKel + "_" + geoRW;
+                    
+                    var stats = dataStats[uniqueID] || { suspek: 0 };
+                    
+                    return {
+                        fillColor: getSuspekColor(stats.suspek),
+                        weight: 1.5, opacity: 1, color: 'white', fillOpacity: 0.85
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    var geoKel = feature.properties.Kelurahan.toString().trim().toLowerCase();
+                    var geoRW = parseInt(feature.properties.RW).toString();
+                    var uniqueID = geoKel + "_" + geoRW;
+                    var stats = dataStats[uniqueID] || { suspek: 0, positif: 0 };
+                    
+                    // Tooltip
+                    layer.bindTooltip(`
+                        <div class="rw-tooltip-minimal">
+                            <div class="rw-header-minimal">
+                                <div class="rw-badge-minimal ${stats.suspek === 0 ? 'safe' : (stats.suspek <= 4 ? 'warning' : 'danger')}">
+                                    RW ${feature.properties.RW}
+                                </div>
+                                <span class="rw-kelurahan-minimal">${feature.properties.Kelurahan}</span>
+                            </div>
+                            <div class="rw-stats-minimal">
+                                <div class="rw-stat-item-minimal">
+                                    <div class="rw-stat-icon-minimal ${stats.suspek === 0 ? 'safe' : 'danger'}">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="rw-stat-content-minimal">
+                                        <div class="rw-stat-value-minimal">${stats.suspek}</div>
+                                        <div class="rw-stat-label-minimal">Terfilter</div>
+                                    </div>
+                                </div>
+                                <div class="rw-stat-item-minimal">
+                                    <div class="rw-stat-icon-minimal ${stats.positif === 0 ? 'safe' : 'danger'}">
+                                        <i class="fas fa-virus"></i>
+                                    </div>
+                                    <div class="rw-stat-content-minimal">
+                                        <div class="rw-stat-value-minimal">${stats.positif}</div>
+                                        <div class="rw-stat-label-minimal">Positif</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `, { className: 'glass-tooltip-minimal', direction: 'top', offset: [0, -10] });
+
+                    // Efek Klik (FlyTo)
+                    layer.on('click', function(e) {
+                         map.flyTo(e.target.getBounds().getCenter(), 16, { duration: 0.6, easeLinearity: 0.5, noMoveStart: true });
+                         e.target.openTooltip(); 
+                    });
+
+                    // Tambahkan Label RW (Manual Marker)
+                    var center = layer.getBounds().getCenter();
+                    L.marker(center, {
+                        icon: L.divIcon({
+                            className: 'rw-map-label',
+                            html: `<div><span style="color:#64748b; margin-right:2px;">RW</span>${feature.properties.RW}</div>`,
+                            iconSize: null, iconAnchor: [0, 0]
+                        }),
+                        interactive: false, zIndexOffset: 1000
+                    }).addTo(map);
+                }
+            }).addTo(map);
+
+            // Pastikan Peta Zoom ke data jika ini load pertama
+            if (allDataRows.length > 0 && !window.hasZoomed) {
+                map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
+                window.hasZoomed = true;
+            }
+        }
+
+        // =========================================================================
+        // BAGIAN 4: LOAD CSV & RENDER LAPISAN STATIS (BATAS, SEKOLAH, DLL)
+        // =========================================================================
+
         var linkCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5OWTdOoOXPJSsPTSnrSJNSTRJE59GTO8VHU_VcgA9ERSdZ-LxWiYfUU6ARZl9Otwpm1SnOAqilOEX/pub?gid=1080065730&single=true&output=csv';
 
         Papa.parse(linkCSV, {
@@ -636,216 +873,115 @@ function getSuspekColor(jumlahSuspek) {
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-                document.getElementById('loader').classList.add('hidden');
+                // Sembunyikan Loader
+                var loader = document.getElementById('loader');
+                if(loader) loader.classList.add('hidden');
                 
-                // --- 1. DETEKSI NAMA KOLOM OTOMATIS ---
-                // Kita cari tahu nama kolom asli di CSV Anda (apakah 'RW', 'rw', 'No RW', dll)
+                // 1. Simpan Raw Data
+                allDataRows = results.data;
                 var fields = results.meta.fields || [];
-                
-                // Fungsi pencari nama kolom yang mirip
+
+                // 2. Deteksi Nama Kolom
                 function cariKolom(kataKunci) {
                     return fields.find(function(f) { 
                         return f.toLowerCase().includes(kataKunci.toLowerCase()); 
                     });
                 }
 
-                // Cari kolom yang mengandung kata kunci ini
-                var colRW = cariKolom("rw");           // Cari kolom yg ada huruf "rw"
-                var colKel = cariKolom("kelurahan");   // Cari kolom yg ada huruf "kelurahan"
-                var colKlas = cariKolom("klasifikasi");// Cari kolom yg ada huruf "klasifikasi" (untuk positif)
+                colRW = cariKolom("rw");
+                colKel = cariKolom("kelurahan");
+                colKlas = cariKolom("klasifikasi");
+                colTahun = cariKolom("tahun");    
+                colMinggu = cariKolom("minggu");  
 
-                // Debugging: Tampilkan di console nama kolom yang ditemukan
-                console.log("Kolom Ditemukan -> RW:", colRW, "| Kelurahan:", colKel, "| Klasifikasi:", colKlas);
+                console.log("Kolom Terdeteksi:", {colRW, colKel, colKlas, colTahun, colMinggu});
 
-                var dataStats = {};
-                maxSuspek = 0;
-                minSuspek = Infinity;
+                // 3. Render Peta Utama (Warna RW)
+                updateMap();
 
-                // --- 2. HITUNG BARIS DATA ---
-                results.data.forEach(function(baris) {
-                    // Ambil data menggunakan nama kolom yang sudah ditemukan tadi
-                    var rawRW = colRW ? baris[colRW] : null;
-                    var rawKel = colKel ? baris[colKel] : null;
-                    var rawKlas = colKlas ? baris[colKlas] : "";
+                // 4. Render Lapisan Statis (Batas Kelurahan, Sekolah, dll)
+                //    Ini yang tadi hilang, sekarang saya masukkan di sini agar pasti muncul
+                renderStaticLayers();
+            }
+        });
 
-                    // Syarat hitung: Asal ada RW dan Kelurahan, kita anggap ini 1 pasien
-                    if (rawRW && rawKel) {
-                        
-                        // Normalisasi (Bersihkan data)
-                        var normKel = rawKel.toString().trim().toLowerCase();
-                        var normRW = parseInt(rawRW).toString(); // "01" jadi "1"
-                        
-                        var uniqueID = normKel + "_" + normRW;
+        function renderStaticLayers() {
+            // A. Batas Kelurahan (Garis Tebal Gelap & Garis Tipis Putih)
+            L.geoJSON(lurah_json, { 
+                style: { color: '#334155', weight: 8, opacity: 0.9, lineCap: 'round', lineJoin: 'round' } 
+            }).addTo(map);
+            
+            L.geoJSON(lurah_json, { 
+                style: { color: 'white', weight: 4, opacity: 1, lineCap: 'round', lineJoin: 'round' } 
+            }).addTo(map);
 
-                        if (!dataStats[uniqueID]) {
-                            dataStats[uniqueID] = { suspek: 0, positif: 0 };
-                        }
-
-                        // RUMUS: Setiap baris = 1 Kasus Suspek
-                        dataStats[uniqueID].suspek += 1;
-
-                        // RUMUS: Jika kolom klasifikasi mengandung kata "positif"
-                        if (rawKlas && rawKlas.toString().toLowerCase().includes("positif")) {
-                            dataStats[uniqueID].positif += 1;
-                        }
-                    }
-                });
-
-                // --- 3. CARI MAX/MIN UNTUK WARNA ---
-                Object.keys(dataStats).forEach(function(key) {
-                    var stats = dataStats[key];
-                    if (stats.suspek > maxSuspek) maxSuspek = stats.suspek;
-                    if (stats.suspek > 0 && stats.suspek < minSuspek) minSuspek = stats.suspek;
-                });
-                if (minSuspek === Infinity) minSuspek = 0;
-
-                // --- 4. RENDER PETA (GEOJSON) ---
-                geojsonLayer = L.geoJSON(rw_json, {
-                    style: function(feature) {
-                        var geoKel = feature.properties.Kelurahan.toString().trim().toLowerCase();
-                        var geoRW = parseInt(feature.properties.RW).toString();
-                        var uniqueID = geoKel + "_" + geoRW;
-                        
-                        var stats = dataStats[uniqueID] || { suspek: 0 };
-                        
-                        return {
-                            fillColor: getSuspekColor(stats.suspek),
-                            weight: 1.5, opacity: 1, color: 'white', fillOpacity: 1.0
-                        };
-                    },
-                    onEachFeature: function(feature, layer) {
-                        var geoKel = feature.properties.Kelurahan.toString().trim().toLowerCase();
-                        var geoRW = parseInt(feature.properties.RW).toString();
-                        var uniqueID = geoKel + "_" + geoRW;
-                        
-                        var stats = dataStats[uniqueID] || { suspek: 0, positif: 0 };
-                        var displayRW = feature.properties.RW;
-
-                        // Marker RW
-                        var center = layer.getBounds().getCenter();
-                        L.marker(center, {
-                            icon: L.divIcon({
-                                className: 'rw-map-label',
-                                html: `<div><span style="color:#64748b; margin-right:2px;">RW</span>${displayRW}</div>`,
-                                iconSize: null, iconAnchor: [0, 0]
-                            }),
-                            interactive: false, zIndexOffset: 1000
-                        }).addTo(map);
-
-                        // Tooltip
-                        layer.bindTooltip(`
-                            <div class="rw-tooltip-minimal">
-                                <div class="rw-header-minimal">
-                                    <div class="rw-badge-minimal ${stats.suspek === 0 ? 'safe' : (stats.suspek <= 4 ? 'warning' : 'danger')}">
-                                        RW ${displayRW}
-                                    </div>
-                                    <span class="rw-kelurahan-minimal">${feature.properties.Kelurahan}</span>
-                                </div>
-                                <div class="rw-stats-minimal">
-                                    <div class="rw-stat-item-minimal">
-                                        <div class="rw-stat-icon-minimal ${stats.suspek === 0 ? 'safe' : 'danger'}">
-                                            <i class="fas fa-user-circle"></i>
-                                        </div>
-                                        <div class="rw-stat-content-minimal">
-                                            <div class="rw-stat-value-minimal">${stats.suspek}</div>
-                                            <div class="rw-stat-label-minimal">Suspek</div>
-                                        </div>
-                                    </div>
-                                    <div class="rw-stat-item-minimal">
-                                        <div class="rw-stat-icon-minimal ${stats.positif === 0 ? 'safe' : 'danger'}">
-                                            <i class="fas fa-virus"></i>
-                                        </div>
-                                        <div class="rw-stat-content-minimal">
-                                            <div class="rw-stat-value-minimal">${stats.positif}</div>
-                                            <div class="rw-stat-label-minimal">Positif</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `, { className: 'glass-tooltip-minimal', direction: 'top', offset: [0, -10] });// Click Interaction
-                        
-                        
-                        layer.on({
-                             click: function(e) {
-                                  // Langsung terbang ke lokasi (FlyTo) tanpa cek ukuran layar
-                                  map.flyTo(e.target.getBounds().getCenter(), 16, { duration: 0.6, easeLinearity: 0.5, noMoveStart: true });
-                                  e.target.openTooltip(); 
-                            }
-                        });
-                    }
-                }).addTo(map);
-
-                // --- 5. RENDER TITIK TAMBAHAN (Sekolah, Marker, dll) ---
-                L.geoJSON(lurah_json, { style: { color: '#334155', weight: 8, opacity: 0.9, lineCap: 'round', lineJoin: 'round' } }).addTo(map);
-                L.geoJSON(lurah_json, { style: { color: 'white', weight: 4, opacity: 1, lineCap: 'round', lineJoin: 'round' } }).addTo(map);
-
-                L.geoJSON(sekolah_json, {
-                    pointToLayer: function (feature, latlng) {
-                        return L.marker(latlng, {
-                            icon: L.divIcon({
-                                html: `<div style="background:#3b82f6; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.2);"><i class="fas fa-school"></i></div>`,
-                                className: '', iconSize: [36, 36], iconAnchor: [18, 18]
-                            })
-                        });
-                    },
-                    onEachFeature: function (feature, layer) {
-                        layer.bindPopup(`<div style="font-family:'Plus Jakarta Sans'; padding:5px;"><strong>${feature.properties["Nama Sekol"]}</strong><br><small style="color:#64748b;">Fasilitas Pendidikan</small></div>`, { className: 'custom-popup', closeOnClick: false, autoClose: false });
-                        
-                    }
-                }).addTo(map);
-
-                const markers = [
-                    { coords: [-0.027447927, 109.35127436], icon: 'fa-hospital', color: '#10b981', title: 'UPT Puskesmas Kampung Dalam' },
-                    { coords: [-0.028725593, 109.35030888], icon: 'fa-landmark', color: '#8b5cf6', title: 'Keraton Kadriyah' }
-                ];
-                markers.forEach(m => {
-                    var mL = L.marker(m.coords, {
+            // B. Sekolah
+            L.geoJSON(sekolah_json, {
+                pointToLayer: function (feature, latlng) {
+                    return L.marker(latlng, {
                         icon: L.divIcon({
-                            html: `<div style="background:${m.color}; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.2);"><i class="fas ${m.icon}"></i></div>`,
+                            html: `<div style="background:#3b82f6; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.2);"><i class="fas fa-school"></i></div>`,
                             className: '', iconSize: [36, 36], iconAnchor: [18, 18]
                         })
-                    }).addTo(map).bindPopup(`<div style="font-family:'Plus Jakarta Sans'; padding:5px;"><strong>${m.title}</strong><br><small style="color:#64748b;">${m.title.includes('Puskesmas') ? 'Fasilitas Kesehatan' : 'Cagar Budaya'}</small></div>`, { className: 'custom-popup', closeOnClick: false, autoClose: false });
-                });
-
-                map.fitBounds(geojsonLayer.getBounds(), { padding: [50, 50] });
-            }
-        });
-
-        // Close Bottom Sheet when clicking map on mobile
-        // Close Bottom Sheet when clicking map on mobile
-        map.on('click', (e) => {
-            if (window.innerWidth <= 768) {
-                // Hanya tutup sidebar jika klik di area kosong peta (bukan pada layer)
-                if (!e.originalEvent._stopped) {
-                    sidebar.classList.remove('active');
+                    });
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup(`<div style="font-family:'Plus Jakarta Sans'; padding:5px;"><strong>${feature.properties["Nama Sekol"]}</strong><br><small style="color:#64748b;">Fasilitas Pendidikan</small></div>`, { className: 'custom-popup', closeOnClick: false, autoClose: false });
+                    
+                    // Interaksi Klik Sekolah (Mobile Friendly)
+                    layer.on('click', function(e) {
+                        e.originalEvent.preventDefault(); 
+                        layer.openPopup(); 
+                    });
                 }
+            }).addTo(map);
+
+            // C. Marker Manual (Puskesmas & Keraton)
+            const markers = [
+                { coords: [-0.027447927, 109.35127436], icon: 'fa-hospital', color: '#10b981', title: 'UPT Puskesmas Kampung Dalam' },
+                { coords: [-0.028725593, 109.35030888], icon: 'fa-landmark', color: '#8b5cf6', title: 'Keraton Kadriyah' }
+            ];
+            markers.forEach(m => {
+                var mL = L.marker(m.coords, {
+                    icon: L.divIcon({
+                        html: `<div style="background:${m.color}; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.2);"><i class="fas ${m.icon}"></i></div>`,
+                        className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                    })
+                }).addTo(map).bindPopup(`<div style="font-family:'Plus Jakarta Sans'; padding:5px;"><strong>${m.title}</strong><br><small style="color:#64748b;">${m.title.includes('Puskesmas') ? 'Fasilitas Kesehatan' : 'Cagar Budaya'}</small></div>`, { className: 'custom-popup', closeOnClick: false, autoClose: false });
                 
-                // Tutup semua popup yang terbuka
-                map.eachLayer(function(layer) {
-                    if (layer.closePopup) {
-                        layer.closePopup();
-                    }
+                mL.on('click', function(e) {
+                     e.originalEvent.preventDefault();
+                     mL.openPopup(); 
                 });
-            }
+            });
+        }
+
+        // =========================================================================
+        // BAGIAN 5: EVENT LISTENERS LAINNYA
+        // =========================================================================
+
+        // Tutup Popup saat klik area kosong
+        map.on('click', (e) => {
+             map.eachLayer(function(layer) {
+                 if (layer.closePopup) { layer.closePopup(); }
+             });
         });
-        
-        // --- LOGIKA ZOOM UNTUK LABEL ---
+
+        // Toggle Label RW saat Zoom
         map.on('zoomend', function() {
             var currentZoom = map.getZoom();
             var mapContainer = map.getContainer();
             
-            // Ubah angka 15 sesuai keinginan (semakin besar angka, semakin harus zoom in baru muncul)
-            if (currentZoom >= 17) { 
+            // Ubah angka 15 jika ingin label muncul lebih cepat/lambat
+            if (currentZoom >= 16) { 
                 mapContainer.classList.add('show-rw-labels');
             } else {
                 mapContainer.classList.remove('show-rw-labels');
             }
         });
-        
-        // Jalankan sekali saat awal load agar statusnya benar
-        map.fire('zoomend');
-        
-        // --- FITUR TOGGLE LEGENDA ---
+        map.fire('zoomend'); // Trigger awal
+
+        // Toggle Sidebar
         function toggleLegend() {
             var sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('minimized');
