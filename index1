@@ -1,0 +1,3205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=850, shrink-to-fit=yes">
+    <title>Bulletin SKDR - UPT Puskesmas Kampung Dalam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #eef2f6;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 40px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #1e293b;
+            min-width: 1200px; /* Lebar minimum fix */
+            overflow-x: auto;  /* Biar bisa di-scroll ke samping jika perlu */
+        }
+
+        /* A4 Glass Container */
+        .page-a4 {
+            width: 210mm;
+            min-height: 297mm;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid white;
+            box-shadow: 
+                0 20px 40px -5px rgba(0, 0, 0, 0.1), 
+                0 10px 20px -5px rgba(0, 0, 0, 0.05),
+                inset 0 0 0 1px rgba(255,255,255,0.5);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 40px;
+        }
+
+        /* Typography First Headings */
+        h1, h2, h3, h4, h5 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Header Styling */
+        .header-modern {
+            position: relative;
+            padding: 3rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Header Mini untuk Halaman 2-10 */
+        .header-mini {
+            position: relative;
+            padding: 1.5rem 3rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .header-bg-image {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            background-image: url('https://www.celebes.co/borneo/wp-content/uploads/2020/01/Tempat-Wisata-Pontianak.jpg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            mask-image: linear-gradient(to right, transparent, black);
+            -webkit-mask-image: linear-gradient(to right, transparent, black);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .header-mini .header-bg-image {
+            width: 40%;
+            opacity: 0.1;
+        }
+
+        /* Glass Cards inside */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+/* --- GANTI CSS .glass-title-2025 DENGAN INI --- */
+
+.title-clean-header {
+    /* Hapus background dan border kotak */
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    backdrop-filter: none;
+    
+    /* Layout */
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end; /* Agar teks sejajar di bawah */
+    padding-bottom: 1.5rem; /* Jarak ke garis bawah */
+    margin-bottom: 2rem;    /* Jarak ke chart */
+    
+    /* Garis pemisah super tipis dan elegan di bawah */
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2); 
+    position: relative;
+}
+
+/* Dekorasi kecil (dot) agar manis tapi tidak norak */
+.title-clean-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1.5px; /* Agar menimpa garis */
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    border-radius: 2px;
+}
+        
+
+        /* Chart Styling */
+        .chart-wrapper {
+            position: relative;
+            background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 100%);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.05),
+                inset 0 0 20px rgba(255,255,255,0.8);
+        }
+
+/* Modern Minimalist Table */
+        .table-glass {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 10px; /* Font kecil sesuai request */
+        }
+        
+        .table-glass thead th {
+            text-align: left;
+            padding: 10px 12px;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .table-glass tbody td {
+            padding: 8px 12px;
+            color: #334155;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+            font-weight: 500;
+        }
+        
+        .table-glass tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .table-glass tbody tr:hover td {
+            background: rgba(255,255,255,0.4);
+        }
+
+        /* Status Indicator Dot */
+        .status-dot {
+            height: 6px; width: 6px; 
+            border-radius: 50%; 
+            display: inline-block; 
+            margin-right: 6px;
+        }
+
+        /* Debug Info */
+        .debug-info {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Print Specifics */
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .page-a4 {
+                width: 100%;
+                min-height: 297mm;
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+                background: white;
+                margin: 0;
+                page-break-after: always;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .chart-wrapper, .glass-card, .glass-title-2025 {
+                box-shadow: none;
+                border: 1px solid #eee;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+      
+/* UPDATE BAGIAN INI DI CSS PALING BAWAH */
+        @media screen and (max-width: 900px) {
+            body {
+                /* 1. Zoom out agar muat (sesuaikan angka ini jika kurang pas) */
+                /*zoom: 0.60; */
+                
+                /* 2. KUNCI: Paksa lebar body SAMA PERSIS dengan lebar kertas A4 (210mm) */
+                min-width: 210mm !important; 
+                width: 210mm !important;
+                
+                /* 3. Hapus margin/padding samping body agar kertas mentok ke pinggir */
+                margin: 0 auto !important; 
+                padding: 30px 0 !important; /* Hanya padding atas bawah */
+                
+                /* Reset display flex agar centering tidak membuat gap samping */
+                display: block !important; 
+                overflow-x: hidden; /* Mencegah geser kanan-kiri */
+            }
+
+            .page-a4 {
+                /* Pastikan kertas berada di tengah */
+                margin: 0 auto 30px auto !important;
+                
+                /* Opsional: Mematikan border radius di HP agar terlihat lebih 'native' */
+                /* border-radius: 0 !important; */ 
+            }
+
+            /* Tombol cetak diperbesar untuk jari */
+            .no-print button {
+                transform: scale(1.8);
+                transform-origin: bottom right;
+                bottom: 20px !important;
+                right: 20px !important;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+
+
+
+    <div class="page-a4">
+        
+        <header class="header-modern">
+            <div class="header-bg-image"></div>
+            
+            <div class="relative z-10 flex justify-between items-start">
+                <div class="space-y-1">
+                    <div class="inline-block px-3 py-1 mb-2 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-bold tracking-[0.2em] uppercase">
+                        Edisi Per Dua Minggu
+                    </div>
+                    <h1 class="text-6xl font-extrabold text-slate-900 tracking-tighter leading-none">
+                        BULLETIN<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">SKDR</span>
+                    </h1>
+                    <div class="h-1 w-24 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full mt-4 mb-4"></div>
+                    <h2 class="text-lg font-medium text-slate-500 tracking-tight">Sistem Kewaspadaan Dini & Respon</h2>
+                    <p class="text-sm font-semibold text-slate-800 mt-1 uppercase tracking-widest">UPT Puskesmas Kampung Dalam</p>
+                </div>
+
+                <div class="flex gap-4 items-center bg-white/50 backdrop-blur-sm p-3 rounded-2xl border border-white/50 shadow-sm">
+                    <img src="https://lh3.googleusercontent.com/u/0/d/1LGtgE7ipYryQ8rB7Eaq74PRDw-BPYU1k" alt="Kemenkes" class="h-14 w-auto object-contain">
+                    <div class="h-8 w-px bg-slate-200"></div>
+                    <img src="https://lh3.googleusercontent.com/u/0/d/1-burH5wGjSumF8eFBu__YQq0bpgurzzb" alt="Pontianak" class="h-14 w-auto object-contain">
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 px-12 py-8 flex flex-col gap-8 relative z-10">
+          <div class="grid grid-cols-3 gap-6 mb-2 relative z-20">
+                <div class="glass-card p-5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-blue-400/20 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-blue-400/30"></div>
+                    <div class="relative z-10 flex flex-col justify-between h-full">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="p-2.5 bg-blue-50/80 rounded-xl border border-blue-100 text-blue-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                            </div>
+                            <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">Target 100%</span>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-extrabold text-slate-800 tracking-tight">100<span class="text-lg text-slate-500 font-bold">%</span></div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1">Kelengkapan</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-400/20 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-emerald-400/30"></div>
+                    <div class="relative z-10 flex flex-col justify-between h-full">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-100 text-emerald-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100">Target ≥80%</span>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-extrabold text-slate-800 tracking-tight">100<span class="text-lg text-slate-500 font-bold">%</span></div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1">Ketepatan</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-rose-400/20 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-rose-400/30"></div>
+                    <div class="relative z-10 flex flex-col justify-between h-full">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="p-2.5 bg-rose-50/80 rounded-xl border border-rose-100 text-rose-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            </div>
+                            <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-1 rounded-full border border-rose-100">
+                                <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                                Verifikasi
+                            </span>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-extrabold text-slate-800 tracking-tight">100<span class="text-lg text-slate-500 font-bold">% dari 97 alert</span></div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1">Alert Direspon</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+           <div class="glass-card p-6 relative overflow-hidden group flex-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-violet-400/20 rounded-full blur-3xl group-hover:bg-violet-400/30 transition-all duration-700"></div>
+                
+                <h4 class="relative z-10 text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                    Evaluasi Kinerja SKDR
+                </h4>
+
+                <div class="relative z-10 text-sm text-slate-600 leading-relaxed text-justify space-y-2">
+                    <p>
+                        Capaian kinerja surveilans minggu ini menunjukkan hasil yang <strong class="text-slate-900">sangat baik</strong>. 
+                        Indikator <span class="font-semibold text-violet-700">Kelengkapan (100%)</span> dan <span class="font-semibold text-violet-700">Ketepatan (100%)</span> 
+                        telah melampaui target minimal nasional (≥80%). Hal ini menjamin validitas data untuk analisis tren penyakit potensial KLB.
+                    </p>
+                    <p>
+                        Seluruh sinyal peringatan dini (Alert) yang muncul telah diverifikasi dalam waktu <strong class="text-slate-900">< 24 jam</strong>, 
+                        sehingga respon penanggulangan dapat dilakukan sesegera mungkin untuk memutus rantai penularan di wilayah kerja UPT Puskesmas Kampung Dalam.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-5 gap-6 mb-4 relative z-20 mt-auto">
+                
+                <div class="col-span-2 glass-card p-4 flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                            TOP 5 PENYAKIT (4 MINGGU)
+                        </h4>
+                        <span class="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100 font-semibold">SKDR</span>
+                    </div>
+                    
+                    <div class="overflow-hidden rounded-lg border border-slate-100 flex-1">
+                        <table class="table-glass">
+                            <thead>
+                                <tr>
+                                    <th>Penyakit</th>
+                                    <th class="text-right">Total</th>
+                                    <th class="text-center">Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="diseaseTableBody">
+                                <tr><td colspan="3" class="text-center py-4 text-slate-400">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-span-3 glass-card p-5 relative overflow-hidden flex flex-col justify-center">
+                    <div class="absolute right-0 bottom-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Interpretasi Data Mingguan</h4>
+                    
+                    <div id="diseaseInterpretation" class="space-y-3 relative z-10">
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            Sedang menganalisis data penyakit dari laporan 4 minggu terakhir...
+                        </p>
+                    </div>
+
+                    <div class="mt-4 flex gap-3">
+                         <div class="glass-card p-5 relative overflow-hidden group">
+                            <div class="text-[12px] text-slate-500 font-semibold">Total Kasus</div>
+                            <div id="totalCases4Weeks" class="text-[20px]  font-bold text-indigo-600">-</div>
+                        </div>
+                        <div class="glass-card p-5 relative overflow-hidden group">
+                            <div class="text-[12px] text-slate-500 font-semibold">Status Kewaspadaan</div>
+                            <div id="alertStatus" class="text-[20px] font-bold text-emerald-600 flex items-center gap-1 mt-0.5">
+                                Dalam Pemantauan
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-widest font-semibold pt-6 border-t border-slate-200/60 mt-auto">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman 1/10</span>
+                <span class="flex items-center gap-1">
+                    SKDR
+                </span>
+            </footer>
+
+        </main>
+    </div>
+
+    <div class="page-a4">
+        <header class="header-mini">
+            <div class="header-bg-image"></div>
+            <div class="relative z-10 flex justify-between items-center">
+                <div class="space-y-0">
+                    <div class="inline-block px-2 py-0.5 mb-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[8px] font-bold tracking-[0.1em] uppercase">Edisi Per Dua Minggu</div>
+                    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight leading-none">BULLETIN <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">SKDR</span></h1>
+                    <p class="text-xs font-medium text-slate-500 mt-0.5">UPT Puskesmas Kampung Dalam</p>
+                </div>
+                <div class="flex gap-2 items-center bg-white/50 backdrop-blur-sm p-2 rounded-xl border border-white/50 shadow-sm">
+                    <img src="https://lh3.googleusercontent.com/u/0/d/1LGtgE7ipYryQ8rB7Eaq74PRDw-BPYU1k" alt="Kemenkes" class="h-8 w-auto object-contain">
+                    <div class="h-6 w-px bg-slate-200"></div>
+                    <img src="https://lh3.googleusercontent.com/u/0/d/1-burH5wGjSumF8eFBu__YQq0bpgurzzb" alt="Pontianak" class="h-8 w-auto object-contain">
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+            
+<div class="title-clean-header">
+    <div class="space-y-1">
+        <div class="flex items-center gap-2 mb-2">
+            <div class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </div>
+            <span class="text-[10px] font-bold text-indigo-600 tracking-[0.2em] uppercase">Epidemiologi</span>
+        </div>
+        
+        <h3 class="text-3xl font-bold text-slate-800 tracking-tight">
+            Tren Mingguan Campak
+        </h3>
+        
+        <p class="text-slate-500 text-sm font-medium leading-relaxed">
+            Visualisasi data & pergerakan kasus mingguan
+        </p>
+    </div>
+
+    <div class="text-right">
+        <div class="flex flex-col items-end">
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                Total Kumulatif
+                <svg class="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            </span>
+            
+            <div class="flex items-end gap-2">
+                <span id="totalKasusHeader" class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 tracking-tighter drop-shadow-sm leading-none">
+                    0
+                </span>
+                
+                <div class="mb-2 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 shadow-sm">
+                    <span class="block text-[10px] font-bold text-indigo-700 uppercase tracking-wider leading-none">
+                        KASUS
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+            <div id="debugInfo" class="debug-info hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <strong class="text-red-600">Debug Information:</strong>
+                    <button onclick="document.getElementById('debugInfo').classList.add('hidden')" class="text-xs text-slate-500">Sembunyikan</button>
+                </div>
+                <div id="debugContent" class="text-xs"></div>
+            </div>
+
+            <div class="chart-wrapper">
+                <div style="height: 350px; width: 100%; position: relative;">
+                    <canvas id="campakChart"></canvas>
+                </div>
+            </div>
+
+              <div class="glass-card p-8 mt-auto mb-8 relative overflow-hidden group">
+                  <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 transition-all duration-700"></div>
+                  
+                  <div class="relative z-10 mb-6 border-b border-slate-100 pb-4">
+                      <h4 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                          Interpretasi Data Epidemiologi
+                      </h4>
+                  </div>
+                  
+                  <div class="relative z-10 grid grid-cols-2 gap-10">
+                      
+                      <div class="space-y-3">
+                          <h5 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                              Metodologi Surveilans
+                          </h5>
+                          <p id="methodologyText" class="text-sm text-slate-600 leading-relaxed text-justify">
+                              Data bersumber dari laporan rutin SKDR Puskesmas Kampung Dalam. Grafik merepresentasikan tren mingguan kasus suspek Campak yang telah diverifikasi, mencakup periode berjalan tahun ini. Data ini valid digunakan sebagai dasar pengambilan keputusan respon cepat.
+                          </p>
+                      </div>
+              
+                      <div class="space-y-3">
+                          <h5 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                              Analisis Situasi & Rekomendasi
+                          </h5>
+                          <p id="recommendationText" class="text-sm text-slate-600 leading-relaxed text-justify">
+                               Sedang menganalisis tren data...
+                          </p>
+                      </div>
+              
+                  </div>
+              </div>
+
+            <footer class="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-widest font-semibold pt-6 border-t border-slate-200/60">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman 2/10</span>
+                <span class="flex items-center gap-1">
+                    Data Mingguan
+                    <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                </span>
+            </footer>
+        </main>
+    </div>
+
+    <div id="pagesContainer">
+        </div>
+
+    <script>
+      
+const URL_PETA_CUSTOM = './peta_sebaran/index.html';      
+        
+// URL Google Sheets (Raw Data)
+const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5OWTdOoOXPJSsPTSnrSJNSTRJE59GTO8VHU_VcgA9ERSdZ-LxWiYfUU6ARZl9Otwpm1SnOAqilOEX/pub?gid=1080065730&single=true&output=csv';
+
+// Variabel global untuk data
+        let dataMinggu = [];
+        let dataKasus = [];
+        let globalMainData = []; // <--- Variabel BARU untuk menampung seluruh data mentah
+        let totalMinggu = 0;
+        let chartInstance = null;
+        
+        // --- TAMBAHAN BARU: VARIABEL UNTUK MAP OVERLAY ---
+        let globalRWData = []; // Ini untuk menampung semua data RW dari kedua kelurahan
+
+        // Fungsi untuk menampilkan debug info
+        function showDebugInfo(info) {
+            const debugDiv = document.getElementById('debugInfo');
+            const debugContent = document.getElementById('debugContent');
+            
+            debugContent.textContent = JSON.stringify(info, null, 2);
+            debugDiv.classList.remove('hidden');
+        }
+
+        // Fungsi untuk membersihkan dan memvalidasi data
+        function cleanData(value) {
+            if (!value) return null;
+            let cleaned = value.toString().trim();
+            cleaned = cleaned.replace(/["'`]/g, '');
+            cleaned = cleaned.replace(/[^\d.-]/g, '');
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? null : num;
+        }
+
+        function findColumnIndex(headers, patterns) {
+            for (let pattern of patterns) {
+                for (let i = 0; i < headers.length; i++) {
+                    if (headers[i] && headers[i].toString().toLowerCase().includes(pattern)) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+async function fetchDataFromGoogleSheets() {
+            try {
+                const response = await fetch(GOOGLE_SHEETS_URL, { cache: "no-store" });
+                const csvText = await response.text();
+                
+                // Parse CSV
+                const results = Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true // Ubah angka jadi number otomatis
+                });
+
+// Reset Variabel Global
+                dataMinggu = [];
+                dataKasus = [];
+                globalMainData = results.data; // <--- SIMPAN DATA MENTAH DI SINI
+                
+                // Objek untuk menampung hitungan per minggu: { '1': 5, '2': 3, ... }
+                let weeklyCounts = {};
+                let maxWeekFound = 0;
+
+                // LOGIKA PIVOTING: Loop setiap baris data mentah
+                results.data.forEach(row => {
+                    // Ambil nama kolom secara fleksibel (case insensitive) atau langsung string kaku
+                    // Sesuai request: Nomor_Epid, Minggu, Tahun
+                    
+                    const keys = Object.keys(row);
+                    const colMinggu = keys.find(k => k.trim().toLowerCase() === 'minggu') || 'Minggu';
+                    const colEpid = keys.find(k => k.trim().toLowerCase() === 'nomor_epid') || 'Nomor_Epid';
+                    const colTahun = keys.find(k => k.trim().toLowerCase() === 'tahun') || 'Tahun';
+
+                    const mingguVal = row[colMinggu];
+                    const epidVal = row[colEpid];
+                    const tahunVal = row[colTahun];
+
+                    // Filter Data Valid:
+                    // 1. Harus ada Nomor_Epid (artinya ada kasus)
+                    // 2. Minggu harus berupa angka
+                    // 3. (Opsional) Bisa tambah filter tahun == 2025 jika perlu
+                    if (epidVal && typeof mingguVal === 'number') {
+                        
+                        // Tambahkan hitungan untuk minggu tersebut
+                        if (!weeklyCounts[mingguVal]) {
+                            weeklyCounts[mingguVal] = 0;
+                        }
+                        weeklyCounts[mingguVal]++;
+
+                        // Melacak minggu terakhir yang ada datanya
+                        if (mingguVal > maxWeekFound) {
+                            maxWeekFound = mingguVal;
+                        }
+                    }
+                });
+
+                // KONVERSI KE ARRAY UNTUK CHART (Isi kekosongan minggu dengan 0)
+                // Kita mulai dari Minggu 1 sampai Minggu Terakhir yang ditemukan
+                if (maxWeekFound > 0) {
+                    for (let i = 1; i <= maxWeekFound; i++) {
+                        dataMinggu.push(i); // Label sumbu X (1, 2, 3...)
+                        dataKasus.push(weeklyCounts[i] || 0); // Nilai sumbu Y (jumlah kasus atau 0)
+                    }
+                } else {
+                    // Jika data kosong
+                    console.warn("Data kosong atau nama kolom tidak sesuai (Minggu/Nomor_Epid)");
+                }
+
+                totalMinggu = dataMinggu.length;
+
+                // Update UI jika berhasil
+                if (totalMinggu > 0) {
+                    updateUIAfterDataFetch(true);
+                    return { success: true, data: { minggu: dataMinggu, kasus: dataKasus } };
+                } else {
+                    throw new Error("Data valid tidak ditemukan");
+                }
+                
+            } catch (error) {
+                console.error('Error fetching/processing data:', error);
+                useSampleData(); // Fallback ke data contoh
+                updateUIAfterDataFetch(false);
+                return { success: false, data: { minggu: dataMinggu, kasus: dataKasus } };
+            }
+        }
+
+        async function parseCSVManually(csvText) {
+            // (Logika parsing manual sama seperti sebelumnya)
+            // Disingkat agar kode lebih rapi, tapi fungsinya tetap ada di logika fetch
+            useSampleData(); // Fallback sederhana
+        }
+
+        function useSampleData() {
+            dataMinggu = Array.from({length: 47}, (_, i) => `M${i + 1}`);
+            dataKasus = [
+                2, 3, 5, 4, 6, 8, 12, 15, 20, 25,
+                30, 35, 42, 40, 38, 45, 50, 55, 60, 58,
+                65, 70, 75, 80, 78, 72, 68, 65, 60, 55,
+                50, 48, 45, 42, 40, 35, 30, 28, 25, 22,
+                20, 18, 15, 12, 10, 8, 5
+            ];
+            totalMinggu = 47;
+        }
+
+          function updateUIAfterDataFetch(success) {
+              // LOGIKA BARU: Menghitung Total Kasus (Sum) dari array dataKasus
+              // .reduce((a, b) => a + b, 0) adalah cara cepat menjumlahkan array di JS
+              const totalKasus = dataKasus.reduce((a, b) => a + b, 0);
+  
+              // Update Angka di Header (ID baru: totalKasusHeader)
+              const totalEl = document.getElementById('totalKasusHeader');
+              
+              // Tampilkan angka (toLocaleString biar ada titik pemisah ribuan kalau angkanya besar)
+              if(totalEl) totalEl.textContent = totalKasus.toLocaleString('id-ID');
+              
+              // --- Bagian Bawah Tetap Sama ---
+              const statusDiv = document.getElementById('dataStatus');
+              const statusTitle = document.getElementById('statusTitle');
+  
+              if (success) {
+                  if(statusDiv) statusDiv.textContent = `✅ Data berhasil diambil: ${totalMinggu} minggu (${totalKasus} total kasus)`;
+                  if(statusTitle) statusTitle.textContent = "Data Berhasil";
+                  updateAnalysis();
+              } else {
+                  if(statusDiv) statusDiv.textContent = '⚠️ Menggunakan data contoh. Pastikan format Google Sheets sesuai.';
+                  if(statusTitle) statusTitle.textContent = "Data Contoh";
+                  updateAnalysis();
+              }
+          }
+
+        function createChart() {
+            const ctx = document.getElementById('campakChart');
+            if (!ctx) return; // Safety check
+
+            const ctx2d = ctx.getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            
+            const gradient = ctx2d.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
+            gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
+            gradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
+            
+            Chart.register(ChartDataLabels);
+            Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+            Chart.defaults.color = '#64748b';
+            
+            chartInstance = new Chart(ctx2d, {
+                type: 'line',
+                data: {
+                    labels: dataMinggu,
+                    datasets: [{
+                        label: 'Kasus',
+                        data: dataKasus,
+                        borderColor: '#4f46e5',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#4f46e5',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, 
+                    layout: { padding: { top: 20, right: 10, left: 10, bottom: 5 } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',  
+                            titleFont: { family: 'Plus Jakarta Sans', size: 11 },
+                            bodyFont: { family: 'Inter', size: 11 },
+                            padding: 12,
+                            cornerRadius: 12,
+                            displayColors: false,
+                            callbacks: {
+                                title: (items) => `Minggu ke-${items[0].label}`,
+                                label: (item) => `${item.raw} Kasus`
+                            }
+                        },
+                        datalabels: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            border: { display: false },
+                            grid: { color: '#f1f5f9', borderDash: [4, 4] },
+                            ticks: { font: { size: 9, weight: '500' }, padding: 5, maxTicksLimit: 6 }
+                        },
+                        x: {
+                            border: { display: false },
+                            grid: { display: true, color: '#f1f5f9', drawBorder: false },
+                            ticks: { 
+                                font: { size: 8, family: "'Inter', sans-serif" },
+                                maxRotation: 0,
+                                autoSkip: false, 
+                                maxTicksLimit: 60, 
+                                callback: function(value) {
+                                    const label = this.getLabelForValue(value);
+                                    return label ? label : ''; 
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createMiniHeader(pageNumber) {
+            return `
+                <header class="header-mini">
+                    <div class="header-bg-image"></div>
+                    <div class="relative z-10 flex justify-between items-center">
+                        <div class="space-y-0">
+                            <div class="inline-block px-2 py-0.5 mb-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[8px] font-bold tracking-[0.1em] uppercase">
+                                Edisi Per Dua Minggu
+                            </div>
+                            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight leading-none">
+                                BULLETIN <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">SKDR</span>
+                            </h1>
+                            <p class="text-xs font-medium text-slate-500 mt-0.5">UPT Puskesmas Kampung Dalam</p>
+                        </div>
+                        <div class="flex gap-2 items-center bg-white/50 backdrop-blur-sm p-2 rounded-xl border border-white/50 shadow-sm">
+                            <img src="https://lh3.googleusercontent.com/u/0/d/1LGtgE7ipYryQ8rB7Eaq74PRDw-BPYU1k" alt="Kemenkes" class="h-8 w-auto object-contain">
+                            <div class="h-6 w-px bg-slate-200"></div>
+                            <img src="https://lh3.googleusercontent.com/u/0/d/1-burH5wGjSumF8eFBu__YQq0bpgurzzb" alt="Pontianak" class="h-8 w-auto object-contain">
+                        </div>
+                    </div>
+                </header>
+            `;
+        }
+
+        // Fungsi untuk membuat halaman 3-10 (Karena hal 2 sudah dibuat manual)
+function createPages() {
+            const pagesContainer = document.getElementById('pagesContainer');
+            
+            // Loop dimulai dari 3 sampai 10
+            for (let pageNum = 3; pageNum <= 11; pageNum++) {
+                const page = document.createElement('div');
+                page.className = 'page-a4';
+                
+                // Konten Khusus Halaman 3
+                let pageContent = '';
+                
+if (pageNum === 3) {
+                    pageContent = `
+                        ${createMiniHeader(pageNum)}
+                        
+                      <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+                        
+                            <div class="border-b border-slate-100 pb-4 mb-2">
+                                <h3 class="text-2xl font-bold text-slate-800 tracking-tight">Indikator Kinerja Penyakit</h3>
+                                <p class="text-slate-500 text-sm">Analisis mortalitas, morbiditas, dan cakupan program</p>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-6 mb-2 relative z-20">
+                                
+                                <div class="glass-card p-5 relative overflow-hidden group">
+                                    <div class="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-full blur-xl -mr-5 -mt-5"></div>
+                                    <div class="relative z-10">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600 border border-blue-100">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            </div>
+                                            <span class="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wider">Morbiditas</span>
+                                        </div>
+                                        <div class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Annual Incidence Rate</div>
+                                        <div class="flex items-end gap-1">
+                                            <span id="valIR" class="text-3xl font-black text-slate-800 tracking-tight">-</span>
+                                            <span class="text-[10px] font-medium text-slate-400 mb-1.5">/ 1000 Penduduk</span>
+                                        </div>
+                                        <div class="mt-2 text-[10px] text-slate-500 leading-tight">
+                                            Risiko penularan pada populasi berisiko (8.088 anak <15 tahun).
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-5 relative overflow-hidden group">
+                                    <div class="absolute top-0 right-0 w-16 h-16 bg-rose-400/10 rounded-full blur-xl -mr-5 -mt-5"></div>
+                                    <div class="relative z-10">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div class="p-2 bg-rose-50 rounded-lg text-rose-600 border border-rose-100">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            </div>
+                                            <span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 uppercase tracking-wider">Mortalitas</span>
+                                        </div>
+                                        <div class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Case Fatality Rate</div>
+                                        <div class="flex items-end gap-1">
+                                            <span id="valCFR" class="text-3xl font-black text-slate-800 tracking-tight">0%</span>
+                                        </div>
+                                        <div class="mt-2 text-[10px] text-slate-500 leading-tight">
+                                            Persentase kematian dari total kasus yang dilaporkan.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-5 relative overflow-hidden group">
+    <div class="absolute top-0 right-0 w-16 h-16 bg-amber-400/10 rounded-full blur-xl -mr-5 -mt-5"></div>
+    <div class="relative z-10">
+        <div class="flex justify-between items-start mb-3">
+            <div class="p-2 bg-amber-50 rounded-lg text-amber-600 border border-amber-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            </div>
+            <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 uppercase tracking-wider">Pencegahan</span>
+        </div>
+        <div class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Cakupan Imunisasi</div>
+        
+        <div class="flex items-end gap-1">
+            <span id="totalIDLCoverage" class="text-3xl font-black text-slate-800 tracking-tight">...</span>
+        </div>
+        
+        <div class="mt-2 text-[10px] text-slate-500 leading-tight">
+            Cakupan Imunisasi Dasar Lengkap (IDL).
+        </div>
+    </div>
+</div>
+                            </div>
+                            
+<div class="grid grid-cols-2 gap-6 w-full">
+    
+    <div class="glass-card p-5 flex flex-col h-full">
+        <div class="flex justify-between items-center mb-4">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                DISTRIBUSI JENIS KELAMIN
+            </h4>
+        </div>
+        
+        <div class="chart-wrapper w-full h-56 relative">
+            <div class="relative w-full h-full flex items-center justify-center">
+                <canvas id="genderChart"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card p-5 flex flex-col h-full">
+        <div class="flex justify-between items-center mb-4">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                RENTANG USIA KASUS
+            </h4>
+        </div>
+        
+        <div class="chart-wrapper w-full h-56 relative">
+            <div class="relative w-full h-full">
+                <canvas id="ageChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+              <div class="glass-card p-8 mt-auto mb-8 relative overflow-hidden group">
+                  <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 transition-all duration-700"></div>
+                  
+                  <div class="relative z-10 mb-6 border-b border-slate-100 pb-4">
+                      <h4 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                          Interpretasi Demografi
+                      </h4>
+                  </div>
+                  
+                  <div class="relative z-10 grid grid-cols-2 gap-10">
+                      
+                      <div class="space-y-3">
+                          <h5 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                              Jenis Kelamin
+                          </h5>
+                          <p id="genderAnalysis" class="text-sm text-slate-600 leading-relaxed text-justify">
+                              Data ini bersumber dari laporan rutin UPT Puskesmas Kampung Dalam. Grafik merepresentasikan tren mingguan kasus suspek Campak yang telah diverifikasi, mencakup periode berjalan tahun ini. Data ini valid digunakan sebagai dasar pengambilan keputusan respon cepat.
+                          </p>
+                      </div>
+              
+                      <div class="space-y-3">
+                          <h5 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                              Rentang Usia
+                          </h5>
+                          <p id="ageAnalysis" class="text-sm text-slate-600 leading-relaxed text-justify">
+                               Sedang menganalisis tren data...
+                          </p>
+                      </div>
+              
+                  </div>
+              </div>
+
+
+
+
+                            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
+                                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                                <span class="flex items-center gap-1">
+                                    Data Demografi
+                                    <div class="w-2 h-2 rounded-full bg-indigo-400"></div>
+                                </span>
+                            </footer>
+                        </main>
+                    `;
+                    
+} else if (pageNum === 6) {
+                    // --- KONTEN KHUSUS HALAMAN 4 (STATUS LABORATORIUM) ---
+                    pageContent = `
+                        ${createMiniHeader(pageNum)}
+                        <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+                            
+                            <div class="border-b border-slate-100 pb-4 mb-2">
+                                <h3 class="text-2xl font-bold text-slate-800 tracking-tight">Status Laboratorium</h3>
+                                <p class="text-slate-500 text-sm">Rekapitulasi pemeriksaan spesimen Campak/Rubella</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-5 relative z-20">
+                                
+                                <div class="glass-card p-6 relative overflow-hidden group">
+                                    <div class="absolute top-0 right-0 w-20 h-20 bg-indigo-400/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+                                    <div class="relative z-10">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600 border border-indigo-100">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100 uppercase tracking-wider">Total Sampel</span>
+                                        </div>
+                                        <div class="text-slate-500 text-[11px] uppercase font-bold tracking-widest mb-1">Spesimen Dikirim</div>
+                                        <div class="flex items-end gap-1">
+                                            <span id="valKlinis" class="text-5xl font-black text-slate-800 tracking-tight">-</span>
+                                            <span class="text-xs font-medium text-slate-400 mb-2">Sampel</span>
+                                        </div>
+                                        <div class="mt-3 text-[11px] text-slate-500 leading-tight border-t border-slate-100 pt-2">
+                                            Total spesimen yang dikirim ke laboratorium.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 relative overflow-hidden group">
+                                    <div class="absolute top-0 right-0 w-20 h-20 bg-rose-400/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+                                    <div class="relative z-10">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div class="p-2 bg-rose-50 rounded-lg text-rose-600 border border-rose-100">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100 uppercase tracking-wider">Konfirmasi</span>
+                                        </div>
+                                        <div class="text-slate-500 text-[11px] uppercase font-bold tracking-widest mb-1">Hasil Positif</div>
+                                        <div class="flex items-end gap-1">
+                                            <span id="valPositif" class="text-5xl font-black text-rose-600 tracking-tight">-</span>
+                                            <span class="text-xs font-medium text-rose-400 mb-2">Kasus</span>
+                                        </div>
+                                        <div class="mt-3 text-[11px] text-slate-500 leading-tight border-t border-slate-100 pt-2">
+                                            Spesimen terkonfirmasi positif.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 relative overflow-hidden group">
+                                    <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-400/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+                                    <div class="relative z-10">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600 border border-emerald-100">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 uppercase tracking-wider">Discarded</span>
+                                        </div>
+                                        <div class="text-slate-500 text-[11px] uppercase font-bold tracking-widest mb-1">Hasil Negatif</div>
+                                        <div class="flex items-end gap-1">
+                                            <span id="valNegatif" class="text-5xl font-black text-emerald-600 tracking-tight">-</span>
+                                            <span class="text-xs font-medium text-emerald-400 mb-2">Kasus</span>
+                                        </div>
+                                        <div class="mt-3 text-[11px] text-slate-500 leading-tight border-t border-slate-100 pt-2">
+                                            Spesimen dengan hasil negatif (Bukan Campak).
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 relative overflow-hidden group">
+                                    <div class="absolute top-0 right-0 w-20 h-20 bg-amber-400/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+                                    <div class="relative z-10">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div class="p-2 bg-amber-50 rounded-lg text-amber-600 border border-amber-100">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 uppercase tracking-wider">Menunggu</span>
+                                        </div>
+                                        <div class="text-slate-500 text-[11px] uppercase font-bold tracking-widest mb-1">Pending Result</div>
+                                        <div class="flex items-end gap-1">
+                                            <span id="valPending" class="text-5xl font-black text-amber-600 tracking-tight">-</span>
+                                            <span class="text-xs font-medium text-amber-400 mb-2">Sampel</span>
+                                        </div>
+                                        <div class="mt-3 text-[11px] text-slate-500 leading-tight border-t border-slate-100 pt-2">
+                                            Spesimen masih dalam proses pemeriksaan.
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                <div class="glass-card p-8 mt-auto mb-8 relative overflow-hidden group">
+                      <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 transition-all duration-700"></div>
+                      
+                      <div class="relative z-10 mb-6 border-b border-slate-100 pb-4">
+                          <h4 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                              Interpretasi Spesimen Laboratorium
+                          </h4>
+                      </div>
+                      
+                      <div class="relative z-10 grid grid-cols-2 gap-10">
+                          
+                          <div class="space-y-3">
+                              <h5 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                  Kinerja Pengambilan Spesimen
+                              </h5>
+                              <p id="labPerformanceAnalysis" class="text-sm text-slate-600 leading-relaxed text-justify">
+                                  Sedang menghitung rasio spesimen...
+                              </p>
+                          </div>
+                   
+                          <div class="space-y-3">
+                              <h5 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                  Positivity Rate
+                              </h5>
+                              <p id="labResultAnalysis" class="text-sm text-slate-600 leading-relaxed text-justify">
+                                   Sedang menganalisis hasil...
+                              </p>
+                          </div>
+                   
+                      </div>
+                  </div>
+
+                            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
+                                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                                <span class="flex items-center gap-1">
+                                    Data Laboratorium
+                                    <div class="w-2 h-2 rounded-full bg-rose-400"></div>
+                                </span>
+                            </footer>
+                        </main>
+                    `;    
+                    
+// ... (setelah blok pageNum === 4 selesai)
+
+} else if (pageNum === 4) {
+    // --- HALAMAN 5: SEBARAN WILAYAH (LAYOUT FULL & KONSISTEN HAL 1) ---
+    pageContent = `
+        ${createMiniHeader(pageNum)}
+        <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+            
+            <div class="title-clean-header mb-0 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[10px] font-bold text-violet-600 tracking-[0.2em] uppercase bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100">
+                            Fokus Wilayah
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h3 class="text-3xl font-bold text-slate-800 tracking-tight">
+                                Kelurahan Dalam Bugis
+                            </h3>
+                            <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                                Distribusi kumulatif kasus Campak per Rukun Warga (RW) Tahun 2025
+                            </p>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-wrapper p-4 bg-white border border-slate-100 shadow-sm rounded-2xl">
+                <div style="height: 400px; width: 100%; position: relative;">
+                    <canvas id="rwBugisChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 relative overflow-hidden group flex-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-violet-400/20 rounded-full blur-3xl group-hover:bg-violet-400/30 transition-all duration-700"></div>
+                
+                <h4 class="relative z-10 text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0121 18.382V7.618a1 1 0 01-.806-.98l-3.747-1.873M15 7l-5-2.5"></path>
+                    </svg>
+                    Interpretasi Sebaran Wilayah
+                </h4>
+
+                <div id="rwInterpretation" class="relative z-10 text-sm text-slate-600 leading-relaxed text-justify space-y-2">
+                    <div class="flex items-center gap-2 text-slate-400 text-xs italic">
+                        <span class="w-2 h-2 rounded-full bg-slate-300 animate-pulse"></span>
+                        Sedang menyusun interpretasi data...
+                    </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span class="flex items-center gap-1">
+                    Analisis Wilayah
+                    <div class="w-2 h-2 rounded-full bg-violet-400"></div>
+                </span>
+            </footer>
+        </main>
+    `;
+    
+} else if (pageNum === 5) {
+    // --- HALAMAN 6: KELURAHAN TANJUNG HILIR ---
+    pageContent = `
+        ${createMiniHeader(pageNum)}
+        <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+            
+            <div class="title-clean-header mb-0 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[10px] font-bold text-violet-600 tracking-[0.2em] uppercase bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100">
+                            Fokus Wilayah
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h3 class="text-3xl font-bold text-slate-800 tracking-tight">
+                                Kelurahan Tanjung Hilir
+                            </h3>
+                            <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                                Distribusi kumulatif kasus Campak per Rukun Warga (RW) Tahun 2025
+                            </p>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-wrapper p-4 bg-white border border-slate-100 shadow-sm rounded-2xl">
+                <div style="height: 400px; width: 100%; position: relative;">
+                    <canvas id="rwTanjungHilirChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 relative overflow-hidden group flex-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-violet-400/20 rounded-full blur-3xl group-hover:bg-violet-400/30 transition-all duration-700"></div>
+                
+                <h4 class="relative z-10 text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0121 18.382V7.618a1 1 0 01-.806-.98l-3.747-1.873M15 7l-5-2.5"></path>
+                    </svg>
+                    Interpretasi Sebaran Wilayah
+                </h4>
+
+                <div id="rwTanjungHilirInterpretation" class="relative z-10 text-sm text-slate-600 leading-relaxed text-justify space-y-2">
+                    <div class="flex items-center gap-2 text-slate-400 text-xs italic">
+                        <span class="w-2 h-2 rounded-full bg-slate-300 animate-pulse"></span>
+                        Sedang menyusun interpretasi data Tanjung Hilir...
+                    </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span class="flex items-center gap-1">
+                    Analisis Wilayah
+                    <div class="w-2 h-2 rounded-full bg-violet-400"></div>
+                </span>
+            </footer>
+        </main>
+    `;  
+    
+} else if (pageNum === 7) {
+    // --- HALAMAN 7: ANALISIS KLB CAMPAK KLINIS (FIXED & ALIGNED) ---
+    pageContent = `
+        ${createMiniHeader(pageNum)}
+        <main class="flex-1 px-12 py-6 flex flex-col gap-5 relative z-10 h-full">
+            
+            <div class="flex flex-row justify-between items-end border-b border-slate-200/80 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 mb-1">
+                         <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                        </span>
+                        <span class="text-[10px] font-bold text-rose-600 tracking-[0.2em] uppercase">
+                            Early Warning System
+                        </span>
+                    </div>
+                    <h3 class="text-3xl font-bold text-slate-800 tracking-tight leading-none">
+                        Deteksi KLB <span class="text-indigo-600">Campak Klinis</span>
+                    </h3>
+                    <p class="text-slate-500 text-sm font-medium">
+                        Analisis kluster kasus berdasarkan waktu & lokasi (RW)
+                    </p>
+                </div>
+
+                <div class="flex gap-2">
+                    <div class="bg-white/60 border border-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                        <div class="bg-indigo-50 text-indigo-600 p-1.5 rounded-md">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-[8px] text-slate-400 font-bold uppercase">Ambang Batas</div>
+                            <div class="text-xs font-bold text-slate-800">≥ 5 Kasus</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/60 border border-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                        <div class="bg-indigo-50 text-indigo-600 p-1.5 rounded-md">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-[8px] text-slate-400 font-bold uppercase">Periode</div>
+                            <div class="text-xs font-bold text-slate-800">4 Minggu</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-5 relative overflow-hidden flex-shrink-0">
+                 <div class="absolute top-0 right-0 w-40 h-40 bg-indigo-50/80 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                 
+                 <div class="relative z-10">
+                     <div class="flex justify-between items-center mb-4 border-b border-slate-100/80 pb-2">
+                        <h4 class="text-xs font-bold text-slate-700 flex items-center gap-2 uppercase tracking-wider">
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Monitoring 4 Minggu Terakhir
+                        </h4>
+                        <span class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 font-bold">REAL-TIME</span>
+                     </div>
+
+                     <div id="klbRecentContainer" class="min-h-[80px] flex flex-col justify-center">
+                        <div class="flex items-center justify-center gap-2 text-slate-400">
+                             <div class="w-4 h-4 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin"></div>
+                             <span class="text-xs">Memuat data...</span>
+                        </div>
+                     </div>
+                 </div>
+            </div>
+
+            <div class="glass-card flex-1 flex flex-col relative overflow-hidden p-0 border border-slate-200/60">
+                <div class="px-5 py-3 border-b border-slate-100 bg-white/50 backdrop-blur-md flex justify-between items-center flex-shrink-0">
+                    <h4 class="text-xs font-bold text-slate-700 flex items-center gap-2 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Riwayat KLB Campak Klinis Periode Berjalan
+                    </h4>
+                </div>
+
+                <div class="relative flex-1 w-full bg-white/30">
+                    <div class="absolute inset-0 overflow-y-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse table-fixed">
+                            <thead class="sticky top-0 z-20 bg-slate-50 shadow-sm text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <tr>
+                                    <th class="py-3 px-5 w-[40%] border-b border-slate-100">Lokasi / Wilayah</th>
+                                    <th class="py-3 px-4 w-[25%] border-b border-slate-100">Periode</th>
+                                    <th class="py-3 px-4 w-[15%] text-center border-b border-slate-100">Total</th>
+                                    <th class="py-3 px-5 w-[20%] text-right border-b border-slate-100">Status</th>
+                                </tr>
+                            </thead>
+                            
+                            <tbody id="klbHistoryBody" class="text-xs divide-y divide-slate-100/50">
+                                 <tr>
+                                    <td colspan="4" class="text-center py-12 text-slate-400 italic">
+                                        Menunggu data...
+                                    </td>
+                                 </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto flex-shrink-0">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span class="flex items-center gap-1">
+                    Analisis Epidemiologi
+                    <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                </span>
+            </footer>
+        </main>
+    `;
+
+} else if (pageNum === 8) {
+    // --- HALAMAN 8: ANALISIS KLB CAMPAK PASTI (LABORATORIUM) ---
+    pageContent = `
+        ${createMiniHeader(pageNum)}
+        <main class="flex-1 px-12 py-6 flex flex-col gap-5 relative z-10 h-full">
+            
+            <div class="flex flex-row justify-between items-end border-b border-slate-200/80 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 mb-1">
+                         <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                        </span>
+                        <span class="text-[10px] font-bold text-rose-700 tracking-[0.2em] uppercase">
+                            Konfirmasi Laboratorium
+                        </span>
+                    </div>
+                    <h3 class="text-3xl font-bold text-slate-800 tracking-tight leading-none">
+                        KLB <span class="text-rose-600">Campak Pasti</span>
+                    </h3>
+                    <p class="text-slate-500 text-sm font-medium">
+                        Analisis kluster berdasarkan hasil positif laboratorium
+                    </p>
+                </div>
+
+                <div class="flex gap-2">
+                    <div class="bg-white/60 border border-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                        <div class="bg-rose-50 text-rose-600 p-1.5 rounded-md">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-[8px] text-slate-400 font-bold uppercase">Definisi KLB</div>
+                            <div class="text-xs font-bold text-slate-800">≥ 2 Positif</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/60 border border-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                        <div class="bg-rose-50 text-rose-600 p-1.5 rounded-md">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-[8px] text-slate-400 font-bold uppercase">Periode</div>
+                            <div class="text-xs font-bold text-slate-800">4 Minggu</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-5 relative overflow-hidden flex-shrink-0">
+                 <div class="absolute top-0 right-0 w-40 h-40 bg-rose-50/80 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                 
+                 <div class="relative z-10">
+                     <div class="flex justify-between items-center mb-4 border-b border-slate-100/80 pb-2">
+                        <h4 class="text-xs font-bold text-slate-700 flex items-center gap-2 uppercase tracking-wider">
+                            <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Peringatan Dini (Alert)
+                        </h4>
+                        <span class="text-[9px] bg-rose-50 text-rose-600 px-2 py-0.5 rounded border border-rose-100 font-bold">CONFIRMED</span>
+                     </div>
+
+                     <div id="klbPastiRecentContainer" class="min-h-[80px] flex flex-col justify-center">
+                        <div class="flex items-center justify-center gap-2 text-slate-400">
+                             <div class="w-4 h-4 border-2 border-slate-200 border-t-rose-500 rounded-full animate-spin"></div>
+                             <span class="text-xs">Menganalisis hasil laboratorium...</span>
+                        </div>
+                     </div>
+                 </div>
+            </div>
+
+            <div class="glass-card flex-1 flex flex-col relative overflow-hidden p-0 border border-slate-200/60">
+                <div class="px-5 py-3 border-b border-slate-100 bg-white/50 backdrop-blur-md flex justify-between items-center flex-shrink-0">
+                    <h4 class="text-xs font-bold text-slate-700 flex items-center gap-2 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        Riwayat KLB Campak Pasti Periode Periode Berjalan
+                    </h4>
+                </div>
+
+                <div class="relative flex-1 w-full bg-white/30">
+                    <div class="absolute inset-0 overflow-y-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse table-fixed">
+                            <thead class="sticky top-0 z-20 bg-slate-50 shadow-sm text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <tr>
+                                    <th class="py-3 px-5 w-[40%] border-b border-slate-100">Lokasi / Wilayah</th>
+                                    <th class="py-3 px-4 w-[25%] border-b border-slate-100">Periode</th>
+                                    <th class="py-3 px-4 w-[15%] text-center border-b border-slate-100">Positif</th>
+                                    <th class="py-3 px-5 w-[20%] text-right border-b border-slate-100">Status</th>
+                                </tr>
+                            </thead>
+                            
+                            <tbody id="klbPastiHistoryBody" class="text-xs divide-y divide-slate-100/50">
+                                 <tr>
+                                    <td colspan="4" class="text-center py-12 text-slate-400 italic">
+                                        Menunggu data...
+                                    </td>
+                                 </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto flex-shrink-0">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span class="flex items-center gap-1">
+                    Analisis Laboratorium
+                    <div class="w-1.5 h-1.5 rounded-full bg-rose-600"></div>
+                </span>
+            </footer>
+        </main>
+    `;
+    
+// ... (kode halaman 3-8 tetap sama) ...
+
+} else if (pageNum === 9) {
+    // --- HALAMAN 9: IDL KELURAHAN DALAM BUGIS ---
+    pageContent = `
+        ${createMiniHeader(pageNum)}
+        <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+            
+            <div class="title-clean-header mb-0 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[10px] font-bold text-cyan-600 tracking-[0.2em] uppercase bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100">
+                            Program Imunisasi
+                        </span>
+                    </div>
+                    
+                    <h3 class="text-3xl font-bold text-slate-800 tracking-tight">
+                        Kelurahan Dalam Bugis
+                    </h3>
+                    <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                        Cakupan Imunisasi Dasar Lengkap (IDL) per RW Tahun 2025
+                    </p>
+                </div>
+            </div>
+
+            <div class="chart-wrapper p-4 bg-white border border-slate-100 shadow-sm rounded-2xl">
+                <div style="height: 380px; width: 100%; position: relative;">
+                    <canvas id="idlBugisChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 relative overflow-hidden group flex-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-cyan-400/20 rounded-full blur-3xl group-hover:bg-cyan-400/30 transition-all duration-700"></div>
+                
+                <div class="relative z-10 mb-4 border-b border-slate-100 pb-2">
+                    <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Analisis Cakupan IDL
+                    </h4>
+                </div>
+
+                <div class="relative z-10 grid grid-cols-2 gap-8">
+                     <div class="space-y-2">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Target Nasional</div>
+                        <div class="text-3xl font-black text-slate-800">95<span class="text-lg text-slate-400">%</span></div>
+                        <p class="text-xs text-slate-500 leading-tight">Target minimal herd immunity.</p>
+                     </div>
+
+                     <div class="space-y-2">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Interpretasi</div>
+                        <div id="idlBugisInterpretation" class="text-xs text-slate-600 leading-relaxed text-justify">
+                             Sedang memuat data imunisasi...
+                        </div>
+                     </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span class="flex items-center gap-1">
+                    Data PWS KIA/Imunisasi
+                    <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
+                </span>
+            </footer>
+        </main>
+    `;
+
+} else if (pageNum === 10) {
+    // --- HALAMAN 10: IDL KELURAHAN TANJUNG HILIR ---
+    pageContent = `
+        ${createMiniHeader(pageNum)}
+        <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+            
+            <div class="title-clean-header mb-0 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[10px] font-bold text-cyan-600 tracking-[0.2em] uppercase bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100">
+                            Program Imunisasi
+                        </span>
+                    </div>
+                    
+                    <h3 class="text-3xl font-bold text-slate-800 tracking-tight">
+                        Kelurahan Tanjung Hilir
+                    </h3>
+                    <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                        Cakupan Imunisasi Dasar Lengkap (IDL) per RW Tahun 2025
+                    </p>
+                </div>
+            </div>
+
+            <div class="chart-wrapper p-4 bg-white border border-slate-100 shadow-sm rounded-2xl">
+                <div style="height: 380px; width: 100%; position: relative;">
+                    <canvas id="idlTanjungHilirChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 relative overflow-hidden group flex-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-cyan-400/20 rounded-full blur-3xl group-hover:bg-cyan-400/30 transition-all duration-700"></div>
+                
+                <div class="relative z-10 mb-4 border-b border-slate-100 pb-2">
+                    <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Analisis Cakupan IDL
+                    </h4>
+                </div>
+
+                <div class="relative z-10 grid grid-cols-2 gap-8">
+                     <div class="space-y-2">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Target Nasional</div>
+                        <div class="text-3xl font-black text-slate-800">95<span class="text-lg text-slate-400">%</span></div>
+                        <p class="text-xs text-slate-500 leading-tight">Target minimal herd immunity.</p>
+                     </div>
+
+                     <div class="space-y-2">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Interpretasi</div>
+                        <div id="idlTanjungHilirInterpretation" class="text-xs text-slate-600 leading-relaxed text-justify">
+                             Sedang memuat data imunisasi...
+                        </div>
+                     </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span class="flex items-center gap-1">
+                    Data PWS KIA/Imunisasi
+                    <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
+                </span>
+            </footer>
+        </main>
+    `;
+
+} else if (pageNum === 11) {
+    // --- HALAMAN 11: PETA GIS (DATA REAL) ---
+    pageContent = `
+        ${createMiniHeader(pageNum)}
+        <main class="flex-1 px-12 py-6 flex flex-col gap-5 relative z-10 h-full">
+            
+            <div class="flex justify-between items-end border-b border-slate-200/80 pb-3">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[10px] font-bold text-emerald-600 tracking-[0.2em] uppercase bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                            Geospatial Intelligence
+                        </span>
+                    </div>
+                    <h3 class="text-3xl font-bold text-slate-800 tracking-tight leading-none">
+                        Peta Sebaran Kasus
+                    </h3>
+                    <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                        Visualisasi spasial berbasis data per RW
+                    </p>
+                </div>
+                
+                <div></div>
+            </div>
+
+            <div class="relative w-full flex-1 min-h-[400px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-lg group">
+                
+<div class="absolute top-4 right-4 z-20 w-56 flex flex-col gap-3">
+              
+                  <div id="hotspotCard" class="bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg transition-all duration-300 overflow-hidden" style="max-height: 42px;">
+                        <div class="flex justify-between items-center p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleHotspot()">
+                            <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                                <svg class="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path></svg>
+                                Hotspot Tertinggi
+                            </span>
+                            <button class="text-slate-400 hover:text-indigo-600 transition-colors">
+                                <svg id="hotspotIcon" class="w-4 h-4 transform transition-transform duration-300 rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="mapTopHotspots" class="p-3 space-y-2 min-h-[60px] flex flex-col justify-center bg-white/50">
+                             <div class="text-[10px] text-slate-400 text-center animate-pulse">Memuat data RW...</div>
+                        </div>
+                  </div>
+
+                  <div id="legendCard" class="bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg transition-all duration-300 overflow-hidden" style="max-height: 42px;">
+                        <div class="flex justify-between items-center p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleLegend()">
+                            <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0121 18.382V7.618a1 1 0 01-.806-.98l-3.747-1.873M15 7l-5-2.5"></path></svg>
+                                Legenda Peta
+                            </span>
+                            <button class="text-slate-400 hover:text-indigo-600 transition-colors">
+                                <svg id="legendIcon" class="w-4 h-4 transform transition-transform duration-300 rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div class="p-3 flex flex-col gap-2.5 bg-white/50">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 rounded-full bg-blue-500 border border-white shadow-sm ring-1 ring-blue-200"></div>
+                                <span class="text-[9px] font-bold text-slate-600">Sekolah</span>
+                            </div>
+<div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 rounded-full bg-red-600 border border-white shadow-sm ring-1 ring-red-200"></div>
+                                <span class="text-[9px] font-bold text-slate-600">Puskesmas</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 bg-white border border-slate-900 shadow-sm"></div>
+                                <span class="text-[9px] font-bold text-slate-600">Batas Kelurahan</span>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-200 mt-1">
+                                <div class="text-[8px] text-slate-400 font-bold mb-1.5 uppercase tracking-wider">Kepadatan Kasus</div>
+                                
+                                <div class="flex h-3 w-full rounded overflow-hidden ring-1 ring-slate-200/50 shadow-sm">
+                                    <div style="background:#fee2e2" class="flex-1" title="0"></div>
+                                    <div style="background:#ffcaca" class="flex-1"></div>
+                                    <div style="background:#fca5a5" class="flex-1"></div>
+                                    <div style="background:#f87171" class="flex-1"></div>
+                                    <div style="background:#ef4444" class="flex-1"></div>
+                                    <div style="background:#b91c1c" class="flex-1"></div>
+                                    <div style="background:#7f1d1d" class="flex-1" title="Tinggi"></div>
+                                </div>
+                                <div class="flex justify-between text-[7px] text-slate-400 font-bold mt-1 uppercase">
+                                    <span>Rendah</span>
+                                    <span>Tinggi</span>
+                                </div>
+                            </div>
+                        </div>
+                  </div>
+                  
+              </div>
+
+<div class="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-xl py-2 px-4 rounded-xl border border-white/60 shadow-xl flex gap-6 items-center min-w-[200px]">
+    
+    <div class="flex flex-col">
+        <div class="flex items-center gap-1.5 mb-0.5">
+            <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Total Kasus</span>
+        </div>
+        <span id="mapTotalCases" class="text-2xl font-black text-slate-800 leading-none">-</span>
+    </div>
+    
+    <div class="h-6 w-px bg-slate-200"></div>
+    
+    <div class="flex flex-col">
+        <div class="flex items-center gap-1.5 mb-0.5">
+            <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">RW Terdampak</span>
+        </div>
+        <span id="mapAffectedRW" class="text-2xl font-black text-rose-600 leading-none">-</span>
+    </div>
+
+</div>
+
+                <iframe 
+                    src="./peta_sebaran/index.html" 
+                    class="absolute inset-0 w-full h-full border-0"
+                    loading="lazy"
+                    title="Peta Sebaran QGIS">
+                </iframe>
+                
+                <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
+            </div>
+
+            <div class="glass-card p-5 mt-auto">
+                <div class="flex gap-5">
+                    <div class="w-1/2 space-y-2 border-r border-slate-200 pr-5">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0121 18.382V7.618a1 1 0 01-.806-.98l-3.747-1.873M15 7l-5-2.5"></path></svg>
+                            Interpretasi Data Spasial
+                        </h4>
+                        <p id="mapInterpretationText" class="text-[10px] text-slate-600 leading-relaxed text-justify">
+                            Sedang menganalisis sebaran wilayah...
+                        </p>
+                    </div>
+                    <div class="w-1/2 space-y-2 pl-2">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Status Wilayah Hijau
+                        </h4>
+                        <p id="mapSafeZonesText" class="text-[10px] text-slate-600 leading-relaxed">
+                            Wilayah tanpa kasus...
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto flex-shrink-0">
+                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/11</span>
+                <span class="flex items-center gap-1">
+                    Analisis Geospasial
+                    <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                </span>
+            </footer>
+        </main>
+    `;
+// ... (kode penutup fungsi createPages dan loop tetap sama)    
+
+                
+                } else {
+                    // KONTEN HALAMAN 9-10 (Standard/Kosong)
+                    pageContent = `
+                        ${createMiniHeader(pageNum)}
+                        <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+                            <div class="flex justify-between items-end border-b border-slate-100 pb-3">
+                                <div>
+                                    <h3 class="text-xl font-bold text-slate-800 mb-1">Konten Halaman ${pageNum}</h3>
+                                    <p class="text-slate-500 text-sm">Tersedia untuk diisi dengan data tambahan</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-extrabold text-indigo-600">${pageNum.toString().padStart(2, '0')}</div>
+                                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Halaman</div>
+                                </div>
+                            </div>
+
+                            <div class="chart-wrapper flex items-center justify-center" style="height: 300px;">
+                                <div class="text-center text-slate-400">
+                                    <p class="text-base font-medium">Area Konten Kosong</p>
+                                </div>
+                            </div>
+
+                            <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
+                                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                            </footer>
+                        </main>
+                    `;
+                }
+
+                page.innerHTML = pageContent;
+                pagesContainer.appendChild(page);
+            }
+        }
+
+function updateAnalysis() {
+            // Pastikan ada data kasus yang diambil
+            if (dataKasus.length > 0) {
+                
+                // --- 1. PERHITUNGAN DATA ---
+                const maxCases = Math.max(...dataKasus); // Cari nilai tertinggi
+                const maxWeekIndex = dataKasus.indexOf(maxCases);
+                const maxWeek = dataMinggu[maxWeekIndex];
+                const totalCases = dataKasus.reduce((a, b) => a + b, 0); // Jumlahkan semua kasus
+                
+                
+                // --- 2. UPDATE HALAMAN 2 (Metodologi & Rekomendasi) ---
+                
+                // Update Teks Metodologi (Kiri Bawah Halaman 2)
+                const methodEl = document.getElementById('methodologyText');
+                if (methodEl) {
+                    methodEl.innerHTML = `
+                        Data ini bersumber dari laporan rutin UPT Puskesmas Kampung Dalam. Grafik di atas memvisualisasikan tren mingguan kasus suspek Campak yang telah divalidasi, mencakup periode 
+                        <strong class="text-slate-800">Minggu 1 hingga Minggu ${totalMinggu}</strong>. 
+                        Data ini dipantau secara mingguan untuk menjamin kewaspadaan dini di UPT Puskesmas Kampung Dalam.
+                    `;
+                }
+
+                // Update Teks Analisis & Rekomendasi (Kanan Bawah Halaman 2)
+                const recEl = document.getElementById('recommendationText');
+                if (recEl) {
+                    let trendAnalysis = "";
+                    if (maxCases > 5) {
+                        trendAnalysis = "Terdeteksi adanya <span class='text-rose-600 font-bold'>lonjakan signifikan</span> pada minggu tertentu.";
+                    } else {
+                        trendAnalysis = "Tren kasus relatif <span class='text-emerald-600 font-bold'>terkendali</span> dengan fluktuasi rendah.";
+                    }
+
+                    recEl.innerHTML = `
+                        Secara kumulatif tercatat <strong class="text-slate-800">${totalCases} kasus</strong>. Puncak tren terjadi pada <strong class="text-indigo-700">Minggu ke-${maxWeek}</strong> (${maxCases} kasus). 
+                        ${trendAnalysis} Diperlukan penguatan Pemantauan Wilayah Setempat (PWS) dan imunisasi (sweeping) pada kantong-kantong populasi rentan di wilayah kerja UPT Puskesmas Kampung Dalam.
+                    `;
+                }
+
+
+                // --- 3. UPDATE HALAMAN 3 (Indikator / Kartu) ---
+                
+                // Rumus: Annual Incidence Rate (IR)
+                // (Total Kasus / Populasi Berisiko) * 10.000
+                const populasiBerisiko = 8088;
+                const incidenceRate = (totalCases / populasiBerisiko) * 1000;
+
+                // Cari elemen kartu di Halaman 3 (ID: valIR)
+                const irElement = document.getElementById('valIR');
+                if (irElement) {
+                    // Tampilkan hasil rumus, ambil 1 angka di belakang koma (misal: 14.5)
+                    // .replace('.', ',') agar formatnya Indonesia (koma bukan titik)
+                    irElement.textContent = incidenceRate.toFixed(1).replace('.', ',');
+                }
+                
+                // Cari elemen CFR di Halaman 3 (ID: valCFR)
+                const cfrElement = document.getElementById('valCFR');
+                if (cfrElement) {
+                    // Karena kematian 0, CFR pasti 0%
+                    cfrElement.textContent = "0%";
+                }
+            }
+        }
+
+// URL Data Penyakit 4 Minggu Terakhir
+        const DISEASE_DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=1260928596&single=true&output=csv';
+
+        async function fetchDiseaseData() {
+            try {
+                const response = await fetch(DISEASE_DATA_URL, { cache: "no-store" });
+                const csvText = await response.text();
+                
+                const results = Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true 
+                });
+
+                if (results.data && results.data.length > 0) {
+                    processDiseaseData(results.data);
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data penyakit:", error);
+                document.getElementById('diseaseTableBody').innerHTML = `<tr><td colspan="3" class="text-center text-red-500 py-2">Gagal memuat data</td></tr>`;
+            }
+        }
+
+        function processDiseaseData(data) {
+            // Asumsi struktur CSV: Kolom "Penyakit" dan kolom-kolom Minggu (misal "M1", "M2", "M3", "M4" atau sejenisnya)
+            // Kita akan mencari kolom yang berisi angka untuk dijumlahkan
+            
+            let processedData = data.map(row => {
+                // Ambil nama penyakit (cari key yang mengandung 'penyakit' atau 'name' atau ambil key pertama)
+                const keys = Object.keys(row);
+                const nameKey = keys.find(k => k.toLowerCase().includes('penyakit')) || keys[0];
+                const diseaseName = row[nameKey];
+
+                // Hitung total dari kolom yang berupa angka (mengabaikan kolom No/Kode)
+                let total = 0;
+                let weeklyValues = [];
+                
+                keys.forEach(key => {
+                    if (typeof row[key] === 'number' && key !== nameKey && !key.toLowerCase().includes('no')) {
+                        total += row[key];
+                        weeklyValues.push(row[key]);
+                    }
+                });
+
+                // Tentukan trend (naik/turun dibanding minggu lalu)
+                // Mengambil 2 nilai terakhir
+                let trend = 'flat';
+                if (weeklyValues.length >= 2) {
+                    const last = weeklyValues[weeklyValues.length - 1];
+                    const prev = weeklyValues[weeklyValues.length - 2];
+                    if (last > prev) trend = 'up';
+                    else if (last < prev) trend = 'down';
+                }
+
+                return { name: diseaseName, total: total, trend: trend, lastVal: weeklyValues[weeklyValues.length-1] || 0 };
+            });
+
+            // Urutkan berdasarkan total kasus terbanyak
+            processedData.sort((a, b) => b.total - a.total);
+            
+            // Ambil Top 5
+            const top5 = processedData.slice(0, 5);
+            
+            // Render Table
+            const tbody = document.getElementById('diseaseTableBody');
+            tbody.innerHTML = '';
+            
+            top5.forEach(item => {
+                let trendIcon = '<span class="text-slate-400">-</span>';
+                if (item.trend === 'up') trendIcon = '<span class="text-rose-500 text-[10px]">▲</span>';
+                if (item.trend === 'down') trendIcon = '<span class="text-emerald-500 text-[10px]">▼</span>';
+
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="flex items-center">
+                                <span class="status-dot ${item.total > 0 ? 'bg-indigo-400' : 'bg-slate-300'}"></span>
+                                ${item.name}
+                            </div>
+                        </td>
+                        <td class="text-right font-bold text-slate-700">${item.total}</td>
+                        <td class="text-center">${trendIcon}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            // Update Interpretasi
+            const topDisease = top5[0];
+            const totalAll = processedData.reduce((acc, curr) => acc + curr.total, 0);
+            
+            document.getElementById('totalCases4Weeks').textContent = totalAll;
+            
+            const interpretationText = document.getElementById('diseaseInterpretation');
+            if (topDisease) {
+                interpretationText.innerHTML = `
+                    <p class="text-sm text-slate-700 font-medium">
+                        Dominasi Kasus: <span class="text-indigo-700 font-bold">${topDisease.name}</span>
+                    </p>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                        Berdasarkan data Sistem Kewaspadaan Dini dan Respon (SKDR), Penyakit ini mencatat jumlah tertinggi dalam 4 minggu terakhir diantara 5 penyakit dengan jumlah temuan tertingi yaitu dengan jumlah total 
+                        <strong class="text-slate-700">${topDisease.total} kasus</strong> dengan 
+                        ${topDisease.trend === 'up' 
+                            ? '<span class="text-rose-600 bg-rose-50 px-1 rounded">Tren meningkat</span> pada minggu terakhir, perlu kewaspadaan dini.' 
+                            : '<span class="text-emerald-600 bg-emerald-50 px-1 rounded">Tren menurun</span> jika dibandingkan minggu sebelumnya.'}
+                    </p>
+                `;
+                
+                // Update status alert jika kasus tinggi
+                const alertEl = document.getElementById('alertStatus');
+                if (topDisease.trend === 'up' && topDisease.lastVal > 5) {
+                     alertEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Waspada Kenaikan';
+                     alertEl.className = "text-xs font-bold text-rose-600 flex items-center gap-1 mt-0.5";
+                }
+            }
+        }
+
+// --- LOGIKA BARU HALAMAN 4 & 5: DATA RW DARI SUMBER UTAMA ---
+
+function processRWData() {
+    // Reset globalRWData untuk Peta
+    globalRWData = [];
+
+    // Variabel penampung sementara
+    const bugisStats = {};
+    const tanjungStats = {};
+
+    // Loop data utama (Single Source)
+    globalMainData.forEach(row => {
+        const keys = Object.keys(row);
+
+        // 1. Deteksi Kolom
+        const colKel = keys.find(k => k.toLowerCase().includes('kelurahan')) || 'Kelurahan';
+        const colRW  = keys.find(k => k.toLowerCase().includes('rw') || k.toLowerCase().includes('RW')) || 'RW'; // Asumsi RW ada di alamat/kolom RW
+        const colKlasifikasi = keys.find(k => k.toLowerCase().includes('klasifikasi') || k.toLowerCase().includes('Klasifikasi')) || 'Klasifikasi';
+        const colEpid = keys.find(k => k.toLowerCase().includes('nomor_epid')) || 'Nomor_Epid';
+
+        // Pastikan baris memiliki Nomor_Epid (Syarat 1: "berdasarkan seberapa banyak Nomor_Epid")
+        if (row[colEpid]) {
+            
+            // Ambil Nilai
+            let kelurahan = String(row[colKel] || '').trim();
+            let rwRaw = String(row[colRW] || '').trim();
+            let status = String(row[colKlasifikasi] || '').toLowerCase();
+            
+            // Format RW (Misal "1" jadi "RW 01")
+            let rwLabel = rwRaw;
+            if (/^\d+$/.test(rwLabel)) rwLabel = "RW " + rwLabel.padStart(2, '0');
+            else if (!rwLabel.toLowerCase().startsWith('rw')) rwLabel = "RW " + rwLabel;
+
+            // Logic Hitung: Tambah 1 Kasus setiap ada Nomor Epid
+            const isPositif = status.includes('positif') ? 1 : 0; // Syarat 2: Status Positif dari Klasifikasi
+
+            // --- KELURAHAN DALAM BUGIS ---
+            if (kelurahan.toLowerCase().includes('bugis')) {
+                if (!bugisStats[rwLabel]) bugisStats[rwLabel] = { total: 0, positif: 0 };
+                bugisStats[rwLabel].total += 1;
+                bugisStats[rwLabel].positif += isPositif;
+            }
+
+            // --- KELURAHAN TANJUNG HILIR ---
+            else if (kelurahan.toLowerCase().includes('tanjung hilir')) {
+                if (!tanjungStats[rwLabel]) tanjungStats[rwLabel] = { total: 0, positif: 0 };
+                tanjungStats[rwLabel].total += 1;
+                tanjungStats[rwLabel].positif += isPositif;
+            }
+        }
+    });
+
+    // --- RENDER CHART & SIMPAN KE GLOBAL DATA (UNTUK PETA) ---
+
+    // 1. Proses Dalam Bugis
+    const labelsBugis = Object.keys(bugisStats).sort();
+    const dataKasusBugis = labelsBugis.map(rw => bugisStats[rw].total);
+    const dataPositifBugis = labelsBugis.map(rw => bugisStats[rw].positif);
+    
+    // Simpan ke Global Data (untuk Peta Halaman 11)
+    labelsBugis.forEach((rw, i) => {
+        globalRWData.push({
+            kelurahan: 'Dalam Bugis',
+            rw: rw,
+            total: dataKasusBugis[i],
+            positif: dataPositifBugis[i]
+        });
+    });
+
+    renderRWChart(labelsBugis, dataKasusBugis, dataPositifBugis); // Pakai fungsi render yg sudah ada
+    generateRWInterpretation(labelsBugis, dataKasusBugis, dataPositifBugis); // Pakai fungsi narasi yg sudah ada
+
+
+    // 2. Proses Tanjung Hilir
+    const labelsTanjung = Object.keys(tanjungStats).sort();
+    const dataKasusTanjung = labelsTanjung.map(rw => tanjungStats[rw].total);
+    const dataPositifTanjung = labelsTanjung.map(rw => tanjungStats[rw].positif);
+
+    // Simpan ke Global Data (untuk Peta Halaman 11)
+    labelsTanjung.forEach((rw, i) => {
+        globalRWData.push({
+            kelurahan: 'Tanjung Hilir',
+            rw: rw,
+            total: dataKasusTanjung[i],
+            positif: dataPositifTanjung[i]
+        });
+    });
+
+    renderTanjungHilirChart(labelsTanjung, dataKasusTanjung, dataPositifTanjung); // Pakai fungsi render yg sudah ada
+    generateTanjungHilirInterpretation(labelsTanjung, dataKasusTanjung, dataPositifTanjung); // Pakai fungsi narasi yg sudah ada
+}
+
+// --- FUNGSI RENDER (TIDAK BERUBAH, HANYA DIPANGGIL OLEH FUNGSI DI ATAS) ---
+
+function renderRWChart(labels, dataKasus, dataPositif) {
+    const ctx = document.getElementById('rwBugisChart');
+    if (!ctx) return;
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) existingChart.destroy();
+    const ctx2d = ctx.getContext('2d');
+    
+    const gradKasus = ctx2d.createLinearGradient(0, 0, 0, 300);
+    gradKasus.addColorStop(0, '#6366f1'); 
+    gradKasus.addColorStop(1, '#a5b4fc'); 
+    const gradPositif = ctx2d.createLinearGradient(0, 0, 0, 300);
+    gradPositif.addColorStop(0, '#f43f5e'); 
+    gradPositif.addColorStop(1, '#fda4af'); 
+
+    new Chart(ctx2d, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Total Kasus', data: dataKasus, backgroundColor: gradKasus, borderRadius: 4, barPercentage: 0.7, categoryPercentage: 0.8 },
+                { label: 'Positif', data: dataPositif, backgroundColor: gradPositif, borderRadius: 4, barPercentage: 0.7, categoryPercentage: 0.8 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, layout: { padding: { top: 0, bottom: 0 } },
+            plugins: {
+                legend: { display: true, position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: { family: "'Inter', sans-serif", size: 11 } } },
+                datalabels: { anchor: 'end', align: 'top', offset: -4, font: { size: 10, weight: 'bold' }, formatter: (value) => value > 0 ? value : '', color: '#475569', textShadowBlur: 4, textShadowColor: 'white' },
+                tooltip: { enabled: true, backgroundColor: 'rgba(255, 255, 255, 0.95)', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1, usePointStyle: true }
+            },
+            scales: {
+                y: { beginAtZero: true, grace: '20%', grid: { color: '#f1f5f9', borderDash: [4, 4] }, border: { display: false }, ticks: { stepSize: 1, precision: 0, font: { size: 10 }, color: '#94a3b8' } },
+                x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10, weight: '600' }, color: '#64748b', autoSkip: false } }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+function generateRWInterpretation(labels, dataKasus, dataPositif) {
+    const elInter = document.getElementById('rwInterpretation');
+    if (!elInter) return;
+    let totalAllKasus = 0; let totalAllPositif = 0; let maxKasus = -1; let maxRW = ''; let positiveRWs = [];
+    dataKasus.forEach((val, index) => {
+        totalAllKasus += val; totalAllPositif += dataPositif[index];
+        if (val > maxKasus) { maxKasus = val; maxRW = labels[index]; }
+        if (dataPositif[index] > 0) { positiveRWs.push(labels[index]); }
+    });
+    let analysisHTML = '';
+    const percentMax = totalAllKasus > 0 ? ((maxKasus / totalAllKasus) * 100).toFixed(0) : 0;
+    
+    analysisHTML += `<p>Secara kumulatif pada periode berjalan, tercatat sebanyak <strong class="text-slate-900">${totalAllKasus} kasus suspek</strong> Campak di wilayah Kelurahan Dalam Bugis. Distribusi kasus tertinggi terpusat di wilayah <strong class="text-indigo-700">${maxRW}</strong> dengan jumlah ${maxKasus} kasus (${percentMax}% dari total kasus).</p>`;
+    
+    if (totalAllPositif > 0) {
+        const rwList = positiveRWs.join(", ");
+        analysisHTML += `<p>Dari hasil pemeriksaan laboratorium, ditemukan adanya <strong class="text-rose-600">${totalAllPositif} kasus konfirmasi positif</strong> yang berdomisili di wilayah <strong class="text-slate-800">${rwList}</strong>.</p>`;
+    } else {
+        analysisHTML += `<p>Hingga laporan ini diterbitkan, <strong class="text-emerald-600">belum ditemukan kasus konfirmasi positif</strong> di seluruh RW (Seluruh spesimen Negatif/Discarded).</p>`;
+    }
+    elInter.innerHTML = analysisHTML;
+}
+
+function renderTanjungHilirChart(labels, dataKasus, dataPositif) {
+    const ctx = document.getElementById('rwTanjungHilirChart');
+    if (!ctx) return;
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) existingChart.destroy();
+    const ctx2d = ctx.getContext('2d');
+    const gradKasus = ctx2d.createLinearGradient(0, 0, 0, 300);
+    gradKasus.addColorStop(0, '#6366f1'); gradKasus.addColorStop(1, '#a5b4fc'); 
+    const gradPositif = ctx2d.createLinearGradient(0, 0, 0, 300);
+    gradPositif.addColorStop(0, '#f43f5e'); gradPositif.addColorStop(1, '#fda4af'); 
+
+    new Chart(ctx2d, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Total Kasus', data: dataKasus, backgroundColor: gradKasus, borderRadius: 4, barPercentage: 0.7, categoryPercentage: 0.8 },
+                { label: 'Positif', data: dataPositif, backgroundColor: gradPositif, borderRadius: 4, barPercentage: 0.7, categoryPercentage: 0.8 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30, bottom: 0 } },
+            plugins: {
+                legend: { display: true, position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: { family: "'Inter', sans-serif", size: 11 } } },
+                datalabels: { anchor: 'end', align: 'top', offset: -4, font: { size: 10, weight: 'bold' }, formatter: (value) => value > 0 ? value : '', color: '#475569', textShadowBlur: 4, textShadowColor: 'white' },
+                tooltip: { enabled: true, backgroundColor: 'rgba(255, 255, 255, 0.95)', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1, usePointStyle: true }
+            },
+            scales: {
+                y: { beginAtZero: true, grace: '20%', grid: { color: '#f1f5f9', borderDash: [4, 4] }, border: { display: false }, ticks: { stepSize: 1, precision: 0, font: { size: 10 }, color: '#94a3b8' } },
+                x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10, weight: '600' }, color: '#64748b', autoSkip: false } }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+function generateTanjungHilirInterpretation(labels, dataKasus, dataPositif) {
+    const elInter = document.getElementById('rwTanjungHilirInterpretation');
+    if (!elInter) return;
+    let totalAllKasus = 0; let totalAllPositif = 0; let maxKasus = -1; let maxRW = ''; let positiveRWs = [];
+    dataKasus.forEach((val, index) => {
+        totalAllKasus += val; totalAllPositif += dataPositif[index];
+        if (val > maxKasus) { maxKasus = val; maxRW = labels[index]; }
+        if (dataPositif[index] > 0) { positiveRWs.push(labels[index]); }
+    });
+    let analysisHTML = '';
+    const percentMax = totalAllKasus > 0 ? ((maxKasus / totalAllKasus) * 100).toFixed(0) : 0;
+    
+    analysisHTML += `<p>Pemantauan epidemiologi di <strong>Kelurahan Tanjung Hilir</strong> mencatat akumulasi sebanyak <strong class="text-slate-900">${totalAllKasus} kasus suspek</strong> Campak. Konsentrasi kasus tertinggi teridentifikasi di wilayah <strong class="text-indigo-700">${maxRW}</strong> (${maxKasus} kasus, ${percentMax}% dari total).</p>`;
+    
+    if (totalAllPositif > 0) {
+        const rwList = positiveRWs.join(", ");
+        analysisHTML += `<p>Berdasarkan verifikasi laboratorium, ditemukan <strong class="text-rose-600">${totalAllPositif} kasus konfirmasi positif</strong> di wilayah <strong class="text-slate-800">${rwList}</strong>. Hal ini menunjukkan transmisi lokal.</p>`;
+    } else {
+        analysisHTML += `<p>Sampai dengan periode pelaporan saat ini, <strong class="text-emerald-600">tidak ditemukan kasus konfirmasi positif</strong> (0 kasus) di Kelurahan Tanjung Hilir.</p>`;
+    }
+    elInter.innerHTML = analysisHTML;
+}
+        
+// =========================================================================
+// LOGIKA BARU HALAMAN 7: DETEKSI KLB KLINIS (SINGLE SOURCE)
+// Syarat: ≥ 5 Kasus dalam 4 Minggu berturut-turut di wilayah sama
+// =========================================================================
+
+function processKLBKlinisFromGlobal() {
+    if (!globalMainData || globalMainData.length === 0) return;
+
+    const locationMap = {}; 
+    let maxWeek = 0;
+
+    globalMainData.forEach(row => {
+        const keys = Object.keys(row);
+        
+        // 1. Cari Kolom
+        const colEpid = keys.find(k => k.trim().toLowerCase().includes('nomor_epid')) || 'Nomor_Epid';
+        const colKel = keys.find(k => k.trim().toLowerCase().includes('kelurahan')) || 'Kelurahan';
+        const colRW  = keys.find(k => k.trim().toLowerCase().includes('rw')) || 'RW';
+        const colMinggu = keys.find(k => k.trim().toLowerCase().includes('minggu')) || 'Minggu';
+
+        // 2. Validasi: Harus ada Nomor Epid (artinya 1 kasus)
+        if (row[colEpid]) {
+            let kelName = String(row[colKel] || '').trim();
+            let rwName = String(row[colRW] || '').trim();
+            let minggu = row[colMinggu];
+
+            if (kelName && rwName && typeof minggu === 'number') {
+                // Normalisasi RW (misal "1" jadi "RW 01")
+                if (/^\d+$/.test(rwName)) rwName = "RW " + rwName.padStart(2, '0');
+                else if (!rwName.toLowerCase().startsWith('rw')) rwName = "RW " + rwName;
+
+                // Kunci Unik: Kelurahan + RW
+                const uniqueID = `${kelName}__${rwName}`;
+
+                if (!locationMap[uniqueID]) {
+                    locationMap[uniqueID] = { kelurahan: kelName, rw: rwName, counts: {} };
+                }
+
+                // Tambah hitungan kasus
+                locationMap[uniqueID].counts[minggu] = (locationMap[uniqueID].counts[minggu] || 0) + 1;
+
+                if (minggu > maxWeek) maxWeek = minggu;
+            }
+        }
+    });
+
+    // 3. Analisis Sliding Window (4 Minggu)
+    const alerts = []; 
+
+    for (const id in locationMap) {
+        const locData = locationMap[id];
+        const weekCounts = locData.counts;
+        
+        // Cek dari minggu ke-4 sampai minggu terakhir
+        for (let w = 4; w <= maxWeek; w++) {
+            let sum = 0;
+            // Jumlahkan kasus w + (w-1) + (w-2) + (w-3)
+            for (let i = 0; i < 4; i++) sum += (weekCounts[w - i] || 0);
+
+            // AMBANG BATAS: ≥ 5 Kasus
+            if (sum >= 5) {
+                alerts.push({
+                    kelurahan: locData.kelurahan,
+                    rw: locData.rw,
+                    endWeek: w,
+                    startWeek: w - 3,
+                    total: sum,
+                    isRecent: (w >= maxWeek - 3) // Dianggap aktif jika terjadi di 4 minggu terakhir data
+                });
+            }
+        }
+    }
+
+    alerts.sort((a, b) => b.endWeek - a.endWeek); // Urutkan terbaru
+    renderKLBUI(alerts, maxWeek); // Gunakan fungsi render yg sudah ada
+}
+
+function renderKLBUI(alerts, maxWeek) {
+            const recentContainer = document.getElementById('klbRecentContainer');
+            const historyBody = document.getElementById('klbHistoryBody');
+            
+            if (!recentContainer || !historyBody) return;
+
+            // --- KARTU 1: MONITORING AKTIF ---
+            const recentAlerts = alerts.filter(a => a.isRecent);
+            
+            if (recentAlerts.length > 0) {
+                let html = `<div class="space-y-2">`;
+                recentAlerts.forEach(alert => {
+                    html += `
+                        <div class="bg-rose-50/80 border border-rose-100 rounded-lg p-3 flex items-center justify-between shadow-sm animate-pulse">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-rose-100 text-rose-600 p-1.5 rounded-md">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-bold text-slate-800">${alert.rw}</div>
+                                    <div class="text-[10px] text-indigo-600 font-bold uppercase tracking-wide">Kel. ${alert.kelurahan}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xl font-black text-rose-600 leading-none">${alert.total}</div>
+                                <div class="text-[9px] text-slate-500 font-medium">Kasus</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                // Rekomendasi
+                html += `
+                    <div class="mt-1 text-[10px] text-slate-600 bg-white/60 p-2 rounded border border-slate-200 flex gap-2 items-center">
+                        <svg class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        <span><strong>Tindakan:</strong> Lakukan PE < 24 jam & ambil spesimen.</span>
+                    </div>
+                </div>`;
+                recentContainer.innerHTML = html;
+            } else {
+                // Tampilan Aman
+                recentContainer.innerHTML = `
+                    <div class="flex items-center justify-center gap-4 py-3">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 flex-shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <div>
+                            <h5 class="text-sm font-bold text-slate-800">Wilayah Aman</h5>
+                            <p class="text-xs text-slate-500 leading-tight">Tidak ada sinyal KLB Campak Klinis dalam 4 minggu terakhir.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // --- KARTU 2: TABEL HISTORY (SESUAIKAN DENGAN TABLE-FIXED HEADER) ---
+            if (alerts.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-slate-400 text-xs">Tidak ada data KLB Campak Klinis periode berjalan.</td></tr>`;
+            } else {
+                let historyHtml = '';
+                alerts.forEach(alert => {
+                    // Badge Status
+                    let statusBadge = alert.isRecent 
+                        ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 border border-rose-200 uppercase">Aktif</span>`
+                        : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase">Selesai</span>`;
+
+                    historyHtml += `
+                        <tr class="hover:bg-slate-50/80 transition-colors">
+                            <td class="py-3 px-5 border-b border-slate-50">
+                                <div class="font-bold text-slate-800 text-[11px]">${alert.rw}</div>
+                                <div class="text-[9px] text-indigo-500 font-semibold uppercase tracking-wide">Kel. ${alert.kelurahan}</div>
+                            </td>
+                            <td class="py-3 px-4 border-b border-slate-50 text-slate-600 text-[10px]">
+                                Minggu ${alert.startWeek}-${alert.endWeek}
+                            </td>
+                            <td class="py-3 px-4 border-b border-slate-50 text-center">
+                                <span class="font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded text-[10px]">
+                                    ${alert.total}
+                                </span>
+                            </td>
+                            <td class="py-3 px-5 border-b border-slate-50 text-right">
+                                ${statusBadge}
+                            </td>
+                        </tr>
+                    `;
+                });
+                historyBody.innerHTML = historyHtml;
+            }
+        }
+        
+// =========================================================================
+// LOGIKA BARU HALAMAN 8: KLB PASTI / LAB (SINGLE SOURCE)
+// Syarat: ≥ 2 Kasus Positif (Klasifikasi) dalam 4 Minggu berturut-turut
+// =========================================================================
+
+function processKLbPastiFromGlobal() {
+    if (!globalMainData || globalMainData.length === 0) return;
+
+    const locationMap = {}; 
+    let maxWeek = 0;
+
+    globalMainData.forEach(row => {
+        const keys = Object.keys(row);
+        
+        // 1. Cari Kolom
+        const colEpid = keys.find(k => k.trim().toLowerCase().includes('nomor_epid')) || 'Nomor_Epid';
+        const colKel = keys.find(k => k.trim().toLowerCase().includes('kelurahan')) || 'Kelurahan';
+        const colRW  = keys.find(k => k.trim().toLowerCase().includes('rw')) || 'RW';
+        const colMinggu = keys.find(k => k.trim().toLowerCase().includes('minggu')) || 'Minggu';
+        const colKlasifikasi = keys.find(k => k.trim().toLowerCase().includes('klasifikasi')) || 'Klasifikasi';
+
+        // 2. Validasi: Harus Nomor Epid DAN Klasifikasi mengandung "positif"
+        const klasifikasi = String(row[colKlasifikasi] || '').toLowerCase();
+        
+        if (row[colEpid] && klasifikasi.includes('positif')) {
+            let kelName = String(row[colKel] || '').trim();
+            let rwName = String(row[colRW] || '').trim();
+            let minggu = row[colMinggu];
+
+            if (kelName && rwName && typeof minggu === 'number') {
+                if (/^\d+$/.test(rwName)) rwName = "RW " + rwName.padStart(2, '0');
+                else if (!rwName.toLowerCase().startsWith('rw')) rwName = "RW " + rwName;
+
+                const uniqueID = `${kelName}__${rwName}`;
+
+                if (!locationMap[uniqueID]) {
+                    locationMap[uniqueID] = { kelurahan: kelName, rw: rwName, counts: {} };
+                }
+
+                locationMap[uniqueID].counts[minggu] = (locationMap[uniqueID].counts[minggu] || 0) + 1;
+
+                if (minggu > maxWeek) maxWeek = minggu;
+            }
+        }
+    });
+
+    // 3. Analisis Sliding Window (4 Minggu)
+    const alerts = []; 
+
+    for (const id in locationMap) {
+        const locData = locationMap[id];
+        const weekCounts = locData.counts;
+        
+        for (let w = 4; w <= maxWeek; w++) {
+            let sum = 0;
+            for (let i = 0; i < 4; i++) sum += (weekCounts[w - i] || 0);
+
+            // AMBANG BATAS: ≥ 2 Kasus Positif
+            if (sum >= 2) {
+                alerts.push({
+                    kelurahan: locData.kelurahan,
+                    rw: locData.rw,
+                    endWeek: w,
+                    startWeek: w - 3,
+                    total: sum,
+                    isRecent: (w >= maxWeek - 3)
+                });
+            }
+        }
+    }
+
+    alerts.sort((a, b) => b.endWeek - a.endWeek);
+    renderKLbPastiUI(alerts, maxWeek); // Gunakan fungsi render yg sudah ada
+}
+
+function renderKLbPastiUI(alerts, maxWeek) {
+    const recentContainer = document.getElementById('klbPastiRecentContainer');
+    const historyBody = document.getElementById('klbPastiHistoryBody');
+    
+    if (!recentContainer || !historyBody) return;
+
+    // --- KARTU ALERT (RECENT) ---
+    const recentAlerts = alerts.filter(a => a.isRecent);
+    
+    if (recentAlerts.length > 0) {
+        let html = `<div class="space-y-2">`;
+        recentAlerts.forEach(alert => {
+            html += `
+                <div class="bg-red-50/90 border border-red-200 rounded-lg p-3 flex items-center justify-between shadow-sm animate-pulse">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-red-100 text-red-600 p-1.5 rounded-md">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-slate-800">${alert.rw}</div>
+                            <div class="text-[10px] text-red-600 font-bold uppercase tracking-wide">Kel. ${alert.kelurahan}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-black text-red-600 leading-none">${alert.total}</div>
+                        <div class="text-[9px] text-slate-500 font-medium">Positif</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += `
+            <div class="mt-1 text-[10px] text-red-700 bg-red-100/50 p-2 rounded border border-red-200 flex gap-2 items-center font-semibold">
+                <span><strong>DARURAT:</strong> Segera lakukan respon KLB (ORI) Terbatas!</span>
+            </div>
+        </div>`;
+        recentContainer.innerHTML = html;
+    } else {
+        recentContainer.innerHTML = `
+            <div class="flex items-center justify-center gap-4 py-3">
+                <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h5 class="text-sm font-bold text-slate-800">Tidak Ada KLB Campak Pasti</h5>
+                    <p class="text-xs text-slate-500 leading-tight">Tidak ditemukan kluster positif (≥2) dalam 4 minggu terakhir.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // --- TABEL HISTORY ---
+    if (alerts.length === 0) {
+        historyBody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-slate-400 text-xs">Belum ada kejadian KLB Pasti tahun ini.</td></tr>`;
+    } else {
+        let historyHtml = '';
+        alerts.forEach(alert => {
+            let statusBadge = alert.isRecent 
+                ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-600 border border-red-200 uppercase">Aktif</span>`
+                : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase">Selesai</span>`;
+
+            historyHtml += `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-3 px-5 border-b border-slate-50">
+                        <div class="font-bold text-slate-800 text-[11px]">${alert.rw}</div>
+                        <div class="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Kel. ${alert.kelurahan}</div>
+                    </td>
+                    <td class="py-3 px-4 border-b border-slate-50 text-slate-600 text-[10px]">
+                        Minggu ${alert.startWeek}-${alert.endWeek}
+                    </td>
+                    <td class="py-3 px-4 border-b border-slate-50 text-center">
+                        <span class="font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded text-[10px]">
+                            ${alert.total}
+                        </span>
+                    </td>
+                    <td class="py-3 px-5 border-b border-slate-50 text-right">
+                        ${statusBadge}
+                    </td>
+                </tr>
+            `;
+        });
+        historyBody.innerHTML = historyHtml;
+    }
+}
+function renderEmptyKLbPasti() {
+    const recentContainer = document.getElementById('klbPastiRecentContainer');
+    if(recentContainer) recentContainer.innerHTML = `<div class="text-slate-400 text-xs text-center">Data kosong.</div>`;
+}   
+
+// --- LOGIKA HALAMAN 9 & 10: CAKUPAN IDL ---
+const URL_IDL_BUGIS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=1780734819&single=true&output=csv';
+const URL_IDL_TANJUNG = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=800244399&single=true&output=csv';
+
+// ================================================================
+// GANTI BAGIAN INI (HAPUS loadIDLData & fetchIDLData LAMA)
+// ================================================================
+
+// Fungsi 1: Mengambil Data & Membaca CSV (Versi Return Data)
+async function loadIDLData(url, chartId, interpretationId, locationName) {
+    try {
+        const response = await fetch(url);
+        const csvText = await response.text();
+        
+        // Baca CSV Manual
+        const result = Papa.parse(csvText, { header: true, dynamicTyping: false, skipEmptyLines: true });
+
+        const labels = [];
+        const values = [];
+
+        result.data.forEach(row => {
+            const keys = Object.keys(row);
+            // Cari Kolom RW & Cakupan secara fleksibel
+            const rwKey = keys.find(k => k.trim().toLowerCase().includes('rw')) || keys[0];
+            const valKey = keys.find(k => k.toLowerCase().includes('cakupan') || k.toLowerCase().includes('idl') || k.includes('%')) || keys[1];
+
+            if (row[rwKey] && row[valKey]) {
+                // Format Label RW
+                let rwLabel = String(row[rwKey]).trim();
+                if (/^\d+$/.test(rwLabel)) rwLabel = "RW " + rwLabel.padStart(2, '0');
+                else if (!rwLabel.toLowerCase().startsWith('rw')) rwLabel = "RW " + rwLabel;
+
+                // Format Angka (Bersihkan % dan ,)
+                let rawVal = String(row[valKey]).trim().replace('%', '').replace(',', '.');
+                const finalVal = parseFloat(rawVal);
+
+                if (!isNaN(finalVal)) {
+                    labels.push(rwLabel);
+                    values.push(finalVal);
+                }
+            }
+        });
+
+        // Update Grafik & Narasi Per Kelurahan
+        if (labels.length > 0) {
+            renderIDLChart(chartId, labels, values);
+            generateIDLInterpretation(interpretationId, labels, values, locationName);
+            return values; // PENTING: Mengirim data balik agar bisa dihitung totalnya
+        } else {
+            console.error(`Data Kosong untuk ${locationName}`);
+            return [];
+        }
+
+    } catch (error) {
+        console.error(`Gagal Load ${locationName}:`, error);
+        return [];
+    }
+}
+
+// Fungsi 2: Menggabungkan Data & Update Halaman 3
+async function fetchIDLData() {
+    console.log("Memulai proses hitung total IDL...");
+    
+    // 1. Ambil data
+    const dataBugis = await loadIDLData(URL_IDL_BUGIS, 'idlBugisChart', 'idlBugisInterpretation', 'Dalam Bugis');
+    const dataTanjung = await loadIDLData(URL_IDL_TANJUNG, 'idlTanjungHilirChart', 'idlTanjungHilirInterpretation', 'Tanjung Hilir');
+    
+    // Pastikan data adalah array (jaga-jaga jika error/undefined)
+    const listBugis = Array.isArray(dataBugis) ? dataBugis : [];
+    const listTanjung = Array.isArray(dataTanjung) ? dataTanjung : [];
+
+    // 2. Gabung Data
+    const totalData = [...listBugis, ...listTanjung];
+    console.log(`Total RW didapat: ${totalData.length}`);
+
+    const elPage3 = document.getElementById('totalIDLCoverage');
+
+    // 3. Update Halaman 3
+    if (elPage3) {
+        if (totalData.length > 0) {
+            const sum = totalData.reduce((a, b) => a + b, 0);
+            const grandAverage = (sum / totalData.length).toFixed(1);
+
+            console.log(`Hasil Perhitungan: ${grandAverage}%`);
+            
+            // Tampilkan Angka
+            elPage3.innerHTML = `${grandAverage}<span class="text-base font-normal text-slate-400">%</span>`;
+
+            // Atur Warna
+            elPage3.classList.remove('text-slate-800', 'text-rose-600', 'text-emerald-600');
+            if (parseFloat(grandAverage) < 95) {
+                elPage3.classList.add('text-rose-600');
+            } else {
+                elPage3.classList.add('text-emerald-600');
+            }
+        } else {
+            // Jika data benar-benar kosong/gagal fetch
+            elPage3.innerText = "N/A";
+            elPage3.classList.add('text-slate-400');
+            console.error("Gagal menghitung: Data kosong.");
+        }
+    } else {
+        console.error("Elemen ID 'totalIDLCoverage' tidak ditemukan di HTML Halaman 3!");
+    }
+}
+// ================================================================
+
+function renderIDLChart(canvasId, labels, data) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+
+    const ctx2d = ctx.getContext('2d');
+    
+    // Gradient Cyan/Teal agar beda dengan chart penyakit
+    const gradient = ctx2d.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, '#06b6d4'); // Cyan-500
+    gradient.addColorStop(1, '#67e8f9'); // Cyan-300
+
+    new Chart(ctx2d, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Cakupan (%)',
+                data: data,
+                backgroundColor: gradient,
+                borderRadius: 4,
+                barPercentage: 0.6,
+                categoryPercentage: 0.8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 25, bottom: 0 } },
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    offset: -4, 
+                    font: { size: 10, weight: 'bold' },
+                    formatter: (value) => value.toFixed(1) + '%', 
+                    color: '#0e7490', // Cyan gelap
+                    textShadowBlur: 4,
+                    textShadowColor: 'white'
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#0e7490',
+                    borderColor: '#cffafe',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: (c) => `Cakupan: ${c.raw}%`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100, // Karena persen, max 100
+                    grid: { color: '#f1f5f9', borderDash: [4, 4] },
+                    ticks: { callback: (v) => v + '%', font: { size: 9 }, stepSize: 20 }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10, weight: '600' }, autoSkip: false }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+function generateIDLInterpretation(elemId, labels, values, locName) {
+    const el = document.getElementById(elemId);
+    if (!el) return;
+
+    // Hitung rata-rata
+    const total = values.reduce((a, b) => a + b, 0);
+    const avg = (total / values.length).toFixed(1);
+    
+    // Cari tertinggi & terendah
+    const maxVal = Math.max(...values);
+    const maxIdx = values.indexOf(maxVal);
+    const minVal = Math.min(...values);
+    const minIdx = values.indexOf(minVal);
+
+    let narasi = `
+        Rata-rata cakupan IDL di Kelurahan ${locName} saat ini mencapai <strong class="text-slate-900">${avg}%</strong>. 
+        Cakupan tertinggi dicapai oleh <strong class="text-cyan-700">${labels[maxIdx]}</strong> (${maxVal}%), 
+        sedangkan wilayah <strong class="text-rose-600">${labels[minIdx]}</strong> masih perlu perhatian khusus karena cakupan terendah (${minVal}%).
+    `;
+
+    if (parseFloat(avg) >= 95) {
+        narasi += `<br><br><span class="text-emerald-600 font-bold">Status: BAIK (Mencapai Target UCI).</span>`;
+    } else {
+        narasi += `<br><br><span class="text-amber-600 font-bold">Status: BELUM MENCAPAI TARGET (Gap ${ (95 - avg).toFixed(1) }%).</span> Perlu sweeping imunisasi segera.`;
+    }
+
+    el.innerHTML = narasi;
+}
+
+// Fungsi untuk Minimize/Maximize Kartu Hotspot
+        function toggleHotspot() {
+            const card = document.getElementById('hotspotCard');
+            const icon = document.getElementById('hotspotIcon');
+            if (card.style.maxHeight === '42px') {
+                card.style.maxHeight = '500px'; 
+                icon.style.transform = 'rotate(180deg)'; 
+            } else {
+                card.style.maxHeight = '42px'; 
+                icon.style.transform = 'rotate(0deg)'; 
+            }
+        }
+
+        // Fungsi untuk Minimize/Maximize Kartu Legenda (BARU)
+        function toggleLegend() {
+            const card = document.getElementById('legendCard');
+            const icon = document.getElementById('legendIcon');
+            if (card.style.maxHeight === '42px') {
+                card.style.maxHeight = '500px'; 
+                icon.style.transform = 'rotate(180deg)'; 
+            } else {
+                card.style.maxHeight = '42px'; 
+                icon.style.transform = 'rotate(0deg)'; 
+            }
+        }
+
+function updateMapOverlay() {
+    // 1. Ambil elemen target di DOM
+    const listEl = document.getElementById('mapTopHotspots');
+    const totalEl = document.getElementById('mapTotalCases');
+    const affectedEl = document.getElementById('mapAffectedRW');
+    const interpretEl = document.getElementById('mapInterpretationText');
+    const safeEl = document.getElementById('mapSafeZonesText');
+
+    if (!listEl) return; // Jika halaman belum dirender, stop
+
+    // 2. Sortir Data RW dari Tertinggi ke Terendah
+    // globalRWData sudah diisi oleh fetchRWData & loadRWTanjungHilirChart
+    const sortedRW = [...globalRWData].sort((a, b) => b.total - a.total);
+
+    // 3. Ambil Top 4 untuk ditampilkan di Overlay
+    const topRW = sortedRW.slice(0, 4); 
+    
+    // 4. Render List Hotspot
+    let listHTML = '';
+    let totalKasusMap = 0;
+    let rwTerdampak = 0;
+    let safeRWCount = 0;
+
+    // Loop untuk statistik
+    globalRWData.forEach(item => {
+        totalKasusMap += item.total;
+        if (item.total > 0) rwTerdampak++;
+        else safeRWCount++;
+    });
+
+    if (topRW.length === 0) {
+        listHTML = '<div class="text-[10px] text-slate-400 text-center">Tidak ada data.</div>';
+    } else {
+        topRW.forEach(item => {
+            // Tentukan Warna Badge sesuai jumlah kasus
+            let badgeClass = '';
+            let labelStatus = '';
+            
+            if (item.total > 2) {
+                badgeClass = 'bg-rose-600 text-white'; // Merah Padat
+                labelStatus = 'Padat';
+            } else if (item.total > 0) {
+                badgeClass = 'bg-rose-100 text-rose-600'; // Merah Kurang Padat / Orange
+                labelStatus = 'Sedang';
+            } else {
+                badgeClass = 'bg-emerald-100 text-emerald-600'; // Hijau
+                labelStatus = 'Aman';
+            }
+
+            listHTML += `
+                 <div class="flex justify-between items-center text-[10px] border-b border-slate-50 pb-1 last:border-0 last:pb-0">
+                    <div>
+                        <div class="font-bold text-slate-700">${item.rw}</div>
+                        <div class="text-[8px] text-slate-400">${item.kelurahan}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800">${item.total}</span>
+                        <span class="${badgeClass} px-1.5 py-0.5 rounded text-[8px] font-bold w-12 text-center">
+                            ${labelStatus}
+                        </span>
+                    </div>
+                 </div>
+            `;
+        });
+    }
+
+    listEl.innerHTML = listHTML;
+    
+    // 5. Update Statistik Ringkas
+    if (totalEl) totalEl.innerText = totalKasusMap;
+    if (affectedEl) affectedEl.innerText = rwTerdampak;
+
+    // 6. Update Interpretasi Teks
+    if (interpretEl && topRW.length > 0) {
+        const hotspot1 = topRW[0];
+        interpretasiText = `
+            Berdasarkan data RW terkini, konsentrasi kasus tertinggi berada di <strong>${hotspot1.rw} (${hotspot1.kelurahan})</strong> dengan total ${hotspot1.total} kasus. 
+            Wilayah ini dikategorikan sebagai zona <strong class="text-rose-600">Padat/Rawan</strong> yang memerlukan intervensi prioritas.
+        `;
+        interpretEl.innerHTML = interpretasiText;
+    }
+
+    if (safeEl) {
+        safeEl.innerHTML = `
+            Terdapat <strong class="text-emerald-600">${safeRWCount} RW</strong> yang masih berstatus <strong>Zona Hijau (0 Kasus)</strong>. 
+            Pertahankan status ini dengan surveilans ketat dan imunisasi rutin.
+        `;
+    }
+}
+
+async function init() {
+    createPages(); // Generate halaman 3-10
+    
+    // 1. AMBIL DATA UTAMA (SINGLE SOURCE)
+    await fetchDataFromGoogleSheets(); 
+
+    // 2. JALANKAN PROSES VISUALISASI BERDASARKAN DATA UTAMA
+    // Semua fungsi di bawah ini sekarang menggunakan 'globalMainData'
+    createChart();                // Halaman 1 & 2 (Tren Mingguan)
+    initPage3Charts();            // Halaman 3 (Gender & Usia)
+    processRWData();              // Halaman 4 & 5 (Wilayah) + Siapkan Data Peta
+    processLabDataFromGlobal();   // Halaman 6 (Status Lab)
+    
+    processKLBKlinisFromGlobal(); // Halaman 7 (KLB Klinis - Logic Baru)
+    processKLbPastiFromGlobal();  // Halaman 8 (KLB Pasti - Logic Baru)
+
+    // Data Tambahan (Masih fetch terpisah karena format beda - PWS Mingguan)
+    fetchDiseaseData();         
+    
+    // 3. AMBIL DATA IMUNISASI (Link Terpisah sesuai request)
+    await fetchIDLData();
+    
+    // 4. UPDATE PETA 
+    updateMapOverlay();
+}
+
+        document.addEventListener('DOMContentLoaded', init);
+        
+// --- LOGIKA BARU UNTUK HALAMAN 3 (GENDER & USIA) - SATU SUMBER DATA ---
+
+async function initPage3Charts() {
+    // Pastikan data utama sudah tersedia
+    if (!globalMainData || globalMainData.length === 0) {
+        console.warn("Data utama belum siap, menunggu...");
+        // Jika dipanggil terlalu cepat, kita bisa memanggil fetch ulang atau menunggu (opsional)
+        // Di sini kita asumsikan init() sudah berurutan (await fetchDataFromGoogleSheets dulu)
+    }
+    
+    processGenderFromGlobal();
+    processAgeFromGlobal();
+}
+
+// 1. CHART GENDER (DONAT) - DARI GLOBAL DATA
+function processGenderFromGlobal() {
+    try {
+        let males = 0;
+        let females = 0;
+        let total = 0;
+
+        // Loop data global yang sudah diambil dari GOOGLE_SHEETS_URL
+        globalMainData.forEach(row => {
+            const keys = Object.keys(row);
+            
+            // Cari kolom secara fleksibel
+            const colTahun = keys.find(k => k.trim().toLowerCase().includes('tahun')) || 'Tahun';
+            const colJK = keys.find(k => k.trim().toLowerCase().includes('jenis_kelamin')) || 'Jenis_Kelamin';
+            const colEpid = keys.find(k => k.trim().toLowerCase().includes('nomor_epid')) || 'Nomor_Epid';
+
+            // Filter Validasi: 
+            // 1. Harus ada Nomor_Epid (User request: berdasarkan seberapa banyak = Nomor_Epid)
+            // 2. Tahun (Opsional: jika ingin filter tahun 2025, uncomment baris di bawah)
+            // if (row[colTahun] != 2025) return; 
+
+            if (row[colEpid] && row[colJK]) {
+                const jk = String(row[colJK]).toLowerCase().trim();
+                
+                if (jk.includes('laki') || jk.includes('pria') || jk === 'l') {
+                    males++;
+                } else if (jk.includes('perempuan') || jk.includes('wanita') || jk === 'p') {
+                    females++;
+                }
+            }
+        });
+
+        total = males + females;
+
+        // Render Chart Gender
+        const ctx = document.getElementById('genderChart');
+        if (ctx) {
+            new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Laki-laki', 'Perempuan'],
+                    datasets: [{
+                        data: [males, females],
+                        backgroundColor: ['#6366f1', '#ec4899'], // Indigo & Pink
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { usePointStyle: true, font: { size: 11, family: "'Inter', sans-serif" }, padding: 20 } 
+                        },
+                        tooltip: {
+                            callbacks: { label: (c) => ` ${c.label}: ${c.raw} Kasus` }
+                        },
+                        datalabels: {
+                            color: '#ffffff',
+                            font: { size: 10, weight: 'bold' },
+                            formatter: (value) => {
+                                if (total === 0) return '';
+                                return ((value / total) * 100).toFixed(0) + '%';
+                            },
+                            textShadowBlur: 2,
+                            textShadowColor: 'black'
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        // Update Teks Interpretasi Gender
+        const analysisEl = document.getElementById('genderAnalysis');
+        if (analysisEl) {
+            const domGender = males > females ? 'Laki-laki' : (females > males ? 'Perempuan' : 'Seimbang');
+            const domVal = Math.max(males, females);
+            const pct = total > 0 ? ((domVal / total) * 100).toFixed(0) : 0;
+
+            analysisEl.innerHTML = `
+                Dari total <strong class="text-slate-900">${total} kasus</strong> yang tercatat (berdasarkan Nomor Epid), 
+                pasien berjenis kelamin <strong class="text-indigo-600">${domGender}</strong> mendominasi sebesar 
+                <strong>${pct}%</strong>. Pola ini menunjukkan distribusi kasus berdasarkan demografi gender di wilayah kerja.
+            `;
+        }
+
+    } catch (e) { console.error("Error processing Gender Chart:", e); }
+}
+
+// 2. CHART USIA (BAR) - DARI GLOBAL DATA
+function processAgeFromGlobal() {
+    try {
+        const ageGroups = {};
+        
+        // Loop data global
+        globalMainData.forEach(row => {
+            const keys = Object.keys(row);
+            
+            // Cari Kolom
+            const colUsia = keys.find(k => k.trim().toLowerCase().includes('rentang_usia')) || 'Rentang_Usia';
+            const colEpid = keys.find(k => k.trim().toLowerCase().includes('nomor_epid')) || 'Nomor_Epid';
+            
+            // Filter: Harus ada Rentang Usia & Nomor Epid
+            if (row[colEpid] && row[colUsia]) {
+                const usiaLabel = String(row[colUsia]).trim();
+                
+                // Hitung frekuensi
+                if (!ageGroups[usiaLabel]) {
+                    ageGroups[usiaLabel] = 0;
+                }
+                ageGroups[usiaLabel]++;
+            }
+        });
+
+        // Convert ke Array untuk Chartjs
+        // Kita urutkan key-nya agar rapi (misal string sort atau logic khusus)
+        const labels = Object.keys(ageGroups).sort(); 
+        const values = labels.map(label => ageGroups[label]);
+
+        // Cari Max untuk Analisis
+        const maxVal = Math.max(...values);
+        const maxIndex = values.indexOf(maxVal);
+        const maxLabel = labels[maxIndex] || '-';
+
+        // Render Chart Usia
+        const ctx = document.getElementById('ageChart');
+        if (ctx) {
+            const ctx2d = ctx.getContext('2d');
+            const gradient = ctx2d.createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, '#8b5cf6'); // Violet
+            gradient.addColorStop(1, '#6366f1'); // Indigo
+
+            new Chart(ctx2d, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Kasus',
+                        data: values,
+                        backgroundColor: gradient,
+                        borderRadius: 6,
+                        barThickness: 'flex',
+                        maxBarThickness: 30
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            color: '#64748b',
+                            anchor: 'end',
+                            align: 'top',
+                            offset: -2,
+                            font: { size: 9, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: { display: false, beginAtZero: true, grace: '10%' },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { font: { size: 9 }, autoSkip: false } 
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        // Update Teks Interpretasi Usia
+        const analysisEl = document.getElementById('ageAnalysis');
+        if (analysisEl) {
+            analysisEl.innerHTML = `
+                Kelompok rentang usia <strong class="text-violet-600">${maxLabel}</strong> mencatat insidensi tertinggi 
+                dengan <strong>${maxVal} kasus</strong>. Data ini dihitung berdasarkan kolom 'Rentang_Usia' dari total data masuk. 
+                Program skrining perlu diprioritaskan pada segmen usia ini.
+            `;
+        }
+
+    } catch (e) { console.error("Error processing Age Chart:", e); }
+}
+        
+
+// --- LOGIKA HALAMAN 6 (LAB DATA - SINGLE SOURCE) ---
+function processLabDataFromGlobal() {
+    // Pastikan data global sudah ada
+    if (!globalMainData || globalMainData.length === 0) return;
+
+    // Variabel penampung total
+    let totalSpesimen = 0; // Kolom Spesimen_Darah = YA
+    let totalPositif = 0;  // Kolom Klasifikasi = Positif
+    let totalNegatif = 0;  // Kolom Klasifikasi = negatif
+    let totalPending = 0;  // Kolom Klasifikasi = Pending
+
+    // Loop data utama
+    globalMainData.forEach(row => {
+        const keys = Object.keys(row);
+
+        // 1. Cari Kolom secara fleksibel (Case Insensitive)
+        const colSpesimen = keys.find(k => k.trim().toLowerCase() === 'spesimen_darah') || 'Spesimen_Darah';
+        const colKlasifikasi = keys.find(k => k.trim().toLowerCase() === 'klasifikasi') || 'Klasifikasi';
+
+        // 2. Ambil Nilai dan bersihkan stringnya
+        const valSpesimen = String(row[colSpesimen] || '').trim().toUpperCase(); // Jadi 'YA'
+        const valKlasifikasi = String(row[colKlasifikasi] || '').trim().toLowerCase(); // Jadi 'positif', 'negatif', 'pending'
+
+        // 3. LOGIKA HITUNG SESUAI REQUEST
+        
+        // A. Spesimen yang dikirim (Spesimen_Darah = YA)
+        if (valSpesimen === 'YA') {
+            totalSpesimen++;
+        }
+
+        // B. Klasifikasi Status
+        if (valKlasifikasi.includes('positif')) {
+            totalPositif++;
+        } else if (valKlasifikasi.includes('negatif')) {
+            totalNegatif++;
+        } else if (valKlasifikasi.includes('pending')) {
+            totalPending++;
+        }
+    });
+
+    // --- UPDATE UI HALAMAN 6 ---
+    
+    // Tampilkan Angka
+    const elKlinis = document.getElementById('valKlinis');
+    const elPositif = document.getElementById('valPositif');
+    const elNegatif = document.getElementById('valNegatif');
+    const elPending = document.getElementById('valPending');
+
+    if(elKlinis) elKlinis.innerText = totalSpesimen.toLocaleString('id-ID');
+    if(elPositif) elPositif.innerText = totalPositif.toLocaleString('id-ID');
+    if(elNegatif) elNegatif.innerText = totalNegatif.toLocaleString('id-ID');
+    if(elPending) elPending.innerText = totalPending.toLocaleString('id-ID');
+
+    // --- UPDATE INTERPRETASI TEKS (BAWAH) ---
+
+    // 1. Analisis Kinerja (Berapa % sampel Selesai vs Total Spesimen)
+    const totalSelesai = totalPositif + totalNegatif;
+    const performanceRate = totalSpesimen > 0 ? ((totalSelesai / totalSpesimen) * 100).toFixed(1) : 0;
+
+    const labPerfEl = document.getElementById('labPerformanceAnalysis');
+    if (labPerfEl) {
+        labPerfEl.innerHTML = `
+            Dari total <strong class="text-slate-800">${totalSpesimen} spesimen darah</strong> yang dikirim (Status: YA), 
+            laboratorium telah menyelesaikan <strong class="text-indigo-600">${totalSelesai} sampel (${performanceRate}%)</strong>. 
+            Saat ini terdapat <span class="font-semibold text-amber-600">${totalPending} sampel</span> yang status klasifikasinya masih <em>Pending</em>.
+        `;
+    }
+
+    // 2. Analisis Hasil (Positivity Rate)
+    const positivityRate = totalSelesai > 0 ? ((totalPositif / totalSelesai) * 100).toFixed(1) : 0;
+    let interpretasiHasil = "";
+
+    if (positivityRate > 5) {
+        interpretasiHasil = `<span class="text-rose-600 font-bold bg-rose-50 px-1 rounded">Tinggi (${positivityRate}%)</span>`;
+    } else if (positivityRate > 0) {
+        interpretasiHasil = `<span class="text-amber-600 font-bold bg-amber-50 px-1 rounded">Rendah (${positivityRate}%)</span>`;
+    } else {
+        interpretasiHasil = `<span class="text-emerald-600 font-bold bg-emerald-50 px-1 rounded">Negatif (0%)</span>`;
+    }
+
+    const labResEl = document.getElementById('labResultAnalysis');
+    if (labResEl) {
+        labResEl.innerHTML = `
+            Tingkat Positif (Positivity Rate) saat ini adalah ${interpretasiHasil}. 
+            Sebanyak <strong class="text-emerald-600">${totalNegatif} kasus</strong> dinyatakan Negatif (Bukan Campak/Rubella).
+        `;
+    }
+}
+        
+    </script>
+</body>
+</html>
