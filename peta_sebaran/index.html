@@ -488,13 +488,16 @@ path.leaflet-interactive:focus {
 <aside class="sidebar-container glass-panel" id="sidebar">
     <div class="sidebar-content">
         
-        <div class="section-header"> 
-            <i class="fas fa-filter" style="color: var(--primary);"></i>
-            <span class="section-title">Filter Data</span>
-            <button class="toggle-btn rotated" id="btnFilter" onclick="toggleSection('filterBody', 'btnFilter')">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
+<div class="section-header"> 
+    <i class="fas fa-filter" style="color: var(--primary);"></i>
+    <span class="section-title">
+        Filter Data 
+        <span id="labelTahun" style="color: var(--primary); font-weight: 800; margin-left: 4px;">(2026)</span>
+    </span>
+    <button class="toggle-btn rotated" id="btnFilter" onclick="toggleSection('filterBody', 'btnFilter')">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+</div>
 
         <div id="filterBody" class="section-body collapsed">
             <div class="filter-group">
@@ -718,14 +721,24 @@ path.leaflet-interactive:focus {
         }
 
         // Fungsi Ganti Tahun (Dipanggil tombol HTML)
+// Fungsi Ganti Tahun (Dipanggil tombol HTML & Saat Load)
         function setYear(year) {
             currentYear = year;
-            // Update tampilan tombol aktif
+            
+            // 1. Update Tampilan Tombol
             document.querySelectorAll('.year-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if(btn.innerText == year) btn.classList.add('active');
             });
-            updateMap(); // Gambar ulang peta
+
+            // 2. Update Label di Judul (Fitur Baru)
+            var label = document.getElementById('labelTahun');
+            if(label) {
+                label.innerText = "(" + year + ")";
+            }
+
+            // 3. Gambar ulang peta
+            updateMap(); 
         }
 
         // =========================================================================
@@ -836,7 +849,7 @@ path.leaflet-interactive:focus {
                                     </div>
                                     <div class="rw-stat-content-minimal">
                                         <div class="rw-stat-value-minimal">${stats.suspek}</div>
-                                        <div class="rw-stat-label-minimal">Terfilter</div>
+                                        <div class="rw-stat-label-minimal">Kasus</div>
                                     </div>
                                 </div>
                                 <div class="rw-stat-item-minimal">
@@ -1003,6 +1016,8 @@ path.leaflet-interactive:focus {
             }
         });
         map.fire('zoomend'); // Trigger awal
+        
+        setYear(currentYear);
 
 // Fungsi Toggle Generic untuk Filter & Legenda
         function toggleSection(bodyId, btnId) {
