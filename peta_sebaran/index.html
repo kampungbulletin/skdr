@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Peta Sebaran Kasus Campak - Pontianak 2025</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
+    <style>
+        :root {
+            /* Palette 2025 */
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --blur-amount: 16px;
+            
+            --primary: #2563eb;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            
+            --radius-xl: 24px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background: #eef2f6;
+            color: var(--text-dark);
+        }
+
+        /* Animated Background Mesh for Glass Effect */
+        .bg-mesh {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            background: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-size: 200% 200%;
+            animation: gradientBG 15s ease infinite;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- MAP CONTAINER --- */
+        #map {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* --- GLASS COMPONENTS --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur-amount));
+            -webkit-backdrop-filter: blur(var(--blur-amount));
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+/* --- GANTI BAGIAN INI --- */
+.sidebar-container {
+    position: absolute;
+    top: 20px;          /* Jarak dari atas */
+    left: 20px;         /* Jarak dari kiri */
+    width: 300px;       /* Ukuran pas untuk legenda */
+    height: auto;       /* TINGGI OTOMATIS (Ini kuncinya agar tidak panjang ke bawah) */
+    bottom: auto;       /* Hapus tarikan ke bawah */
+    border-radius: var(--radius-md);
+    z-index: 99;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;  /* Tidak perlu scroll */
+    transition: transform 0.3s ease;
+}
+
+.sidebar-content {
+    padding: 20px;
+    overflow: visible;
+    height: auto;
+    transition: all 0.3s ease;
+}
+
+/* --- TAMBAHAN UNTUK MINIMIZE --- */
+.toggle-btn {
+    margin-left: auto; /* Dorong ke kanan mentok */
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 14px;
+    transition: transform 0.3s ease;
+    padding: 4px;
+}
+
+/* Wrapper untuk isi legenda agar bisa di-animasi */
+.legend-body-wrapper {
+    max-height: 500px; /* Angka cukup besar agar muat semua */
+    opacity: 1;
+    overflow: hidden; /* Penting untuk efek slide */
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 10px;
+}
+
+/* State ketika Minimized */
+.sidebar-container.minimized .legend-body-wrapper {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.sidebar-container.minimized .toggle-btn {
+    transform: rotate(180deg); /* Putar panahnya */
+}
+
+        /* Section Styling */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            margin-top: 8px;
+        }
+        
+        .section-header:first-child {
+            margin-top: 0;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+        }
+
+        /* Legend */
+        .legend-box {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .legend-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        /* Bar Gradien untuk Skala Kasus */
+.gradient-legend {
+    margin: 20px 0;
+}
+
+.gradient-bar {
+    width: 100%;
+    height: 24px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.gradient-fill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        #ffcccc 0%, 
+        #ff9999 25%, 
+        #ff6666 50%, 
+        #ff3333 75%, 
+        #990000 100%);
+    border-radius: 12px;
+}
+
+.gradient-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+        
+        .legend-dot {
+            width: 16px; height: 16px;
+            border-radius: 6px;
+            margin-right: 12px;
+        }
+        
+        .legend-desc { font-size: 13px; font-weight: 500; color: var(--text-dark); }
+
+        /* Loader */
+        .loader-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(37, 99, 235, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Custom Tooltip */
+        /* Minimal RW Tooltip */
+        .glass-tooltip-minimal {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            border-radius: 10px !important;
+            color: var(--text-dark) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+            padding: 0 !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }
+        
+/* Menghilangkan Panah Kecil (Triangle) di semua sisi */
+        .leaflet-tooltip.glass-tooltip-minimal::before {
+            display: none !important;
+        }
+
+        /* Update styling tooltip agar transisi opacity lebih halus */
+        .glass-tooltip-minimal {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            border-radius: 12px !important; /* Sedikit lebih bulat */
+            color: var(--text-dark) !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important; /* Shadow lebih lembut */
+            padding: 0 !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            margin: 0 !important; /* Reset margin agar posisi sticky pas */
+            transition: opacity 0.2s ease-out; /* Animasi fade in/out halus */
+        }
+        
+        .rw-tooltip-minimal {
+            padding: 12px;
+            min-width: 140px;
+        }
+        
+        .rw-header-minimal {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .rw-badge-minimal {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: white;
+        }
+        
+        .rw-badge-minimal.safe {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .rw-badge-minimal.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .rw-badge-minimal.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .rw-kelurahan-minimal {
+            font-size: 10px;
+            color: var(--text-light);
+            font-weight: 500;
+            background: rgba(241, 245, 249, 0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .rw-stats-minimal {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .rw-stat-item-minimal {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .rw-stat-icon-minimal {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .rw-stat-icon-minimal.safe {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+        
+        .rw-stat-icon-minimal.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .rw-stat-content-minimal {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rw-stat-value-minimal {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--text-dark);
+        }
+        
+        .rw-stat-label-minimal {
+            font-size: 9px;
+            color: var(--text-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .header-island {
+                left: 10px; right: 10px; top: 10px;
+                height: 60px;
+                padding: 0 16px;
+            }
+            
+            .brand-text h1 { font-size: 16px; }
+            .brand-text p { display: none; }
+            
+            /* Sidebar becomes Bottom Sheet */
+            .sidebar-container {
+                top: auto;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                max-height: 85vh;
+                border-radius: 24px 24px 0 0;
+                transform: translateY(100%); /* Hidden by default */
+                transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+                background: white; /* Solid for better mobile performance */
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+            }
+            
+            .sidebar-container.active {
+                transform: translateY(0);
+            }
+
+            .sidebar-content {
+                padding: 16px 20px 30px 20px;
+            }
+        }
+        
+                /* Mobile Popup Fix */
+        @media (max-width: 768px) {
+            .leaflet-popup {
+                margin-bottom: 60px !important; /* Hindari tabrakan dengan sidebar */
+            }
+            
+            .leaflet-popup-content-wrapper {
+                max-width: 250px !important;
+            }
+            
+            .custom-popup .leaflet-popup-content {
+                margin: 10px 12px !important;
+                font-size: 13px !important;
+            }
+        }
+
+        /* Utility */
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.4s forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Menghilangkan kotak hitam (outline) saat diklik pada peta Leaflet */
+path.leaflet-interactive:focus {
+    outline: none;
+}
+
+/* --- TAMBAHAN: Style untuk Label RW --- */
+.rw-map-label {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.rw-map-label div {
+    /* Design Pil */
+    background: rgba(255, 255, 255, 0.95); /* Putih agak transparan */
+    backdrop-filter: blur(4px); /* Efek kaca halus */
+    padding: 6px 12px; /* Jarak dalam agar terlihat gembul */
+    border-radius: 30px; /* Membuat sudut sangat bulat (Pil) */
+    
+    /* Border & Shadow */
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Bayangan agar melayang */
+
+    /* Typography */
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: center;
+    white-space: nowrap;
+    
+    /* Positioning Center */
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.8); /* Mulai agak kecil */
+
+    /* Animasi */
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efek membal (bouncy) */
+    pointer-events: none;
+}
+
+/* Class ini akan ditambahkan ke Peta saat Zoom In */
+.show-rw-labels .rw-map-label div {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1); /* Kembali ke ukuran normal */
+}
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-mesh"></div>
+
+    <div id="map"></div>
+
+<aside class="sidebar-container glass-panel" id="sidebar">
+    <div class="sidebar-content">
+        
+        <div class="section-header" style="margin-bottom: 0;"> <i class="fas fa-map" style="color: var(--primary);"></i>
+            <span class="section-title" style="font-size: 14px;">Legenda Peta</span>
+            <button class="toggle-btn" id="toggleLegendBtn" onclick="toggleLegend()">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
+
+        <div class="legend-body-wrapper">
+            <div style="margin-bottom: 15px; padding-top: 15px;">
+                <div class="stat-label" style="margin-bottom: 5px;">Tingkat Kerawanan (Total Kasus)</div>
+                <div class="gradient-legend" style="margin: 5px 0;">
+                    <div class="gradient-bar" style="height: 12px; border-radius: 6px;">
+                        <div class="gradient-fill"></div>
+                    </div>
+                    <div class="gradient-labels" style="font-size: 10px; margin-top: 4px;">
+                        <span>Rendah</span>
+                        <span>Tinggi</span>
+                    </div>
+                </div>
+            </div>
+
+<div class="legend-box" style="padding: 0; border: none; background: transparent;">
+                
+                <div class="legend-row">
+                    <div style="width: 24px; display: flex; justify-content: center; align-items: center; margin-right: 10px;">
+                        <div style="background: #10b981; width: 14px; height: 14px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="legend-desc">Zona Aman (0 Kasus)</div>
+                </div>
+
+                <div class="legend-row">
+                    <div style="width: 24px; display: flex; justify-content: center; align-items: center; margin-right: 10px;">
+                        <div style="width: 100%; height: 6px; background: #ffffff; border: 1px solid #334155;"></div>
+                    </div>
+                    <div class="legend-desc">Batas Kelurahan</div>
+                </div>
+
+                <div style="border-top: 1px solid rgba(0,0,0,0.1); margin: 10px 0;"></div>
+
+                <div class="legend-row">
+                    <div style="width: 24px; text-align: center; margin-right: 10px; color: #3b82f6;">
+                        <i class="fas fa-school"></i>
+                    </div>
+                    <div class="legend-desc">Fasilitas Pendidikan</div>
+                </div>
+
+                <div class="legend-row">
+                    <div style="width: 24px; text-align: center; margin-right: 10px; color: #10b981;">
+                        <i class="fas fa-hospital"></i>
+                    </div>
+                    <div class="legend-desc">Fasilitas Kesehatan</div>
+                </div>
+
+                <div class="legend-row">
+                    <div style="width: 24px; text-align: center; margin-right: 10px; color: #8b5cf6;">
+                        <i class="fas fa-landmark"></i>
+                    </div>
+                    <div class="legend-desc">Cagar Budaya</div>
+                </div>
+
+            </div>
+        </div> </div>
+</aside>
+
+    <div class="loader-overlay" id="loader">
+        <div class="spinner"></div>
+        <p style="font-weight: 600; color: var(--text-dark);">Memuat Peta...</p>
+    </div>
+
+    <script>
+        // --- DATA GEOJSON (Lengkap) ---
+        
+        // 1. DATA RW
+        var rw_json = {
+            "type": "FeatureCollection",
+            "name": "data_rw",
+            "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+            "features": [
+            { "type": "Feature", "properties": { "fid": 1, "RW": "1", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.348138397189302, -0.027298924683785 ], [ 109.348430157707298, -0.027564206895531 ], [ 109.349033407660315, -0.02713971645288 ], [ 109.350914786611185, -0.028774983720668 ], [ 109.349860757807008, -0.029711127257282 ], [ 109.349247111880985, -0.028964542552022 ], [ 109.349122885791871, -0.029047925037294 ], [ 109.347897480142279, -0.02765328917701 ], [ 109.347959587658082, -0.027454317117255 ], [ 109.348138397189302, -0.027298924683785 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 2, "RW": "2", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.347160076578561, -0.026933708331604 ], [ 109.347831520244554, -0.025345241942409 ], [ 109.347903046759555, -0.025358504172502 ], [ 109.348063038377333, -0.025331969453713 ], [ 109.348642787231597, -0.025676830442669 ], [ 109.349646068496526, -0.026710488990823 ], [ 109.348426393283262, -0.027567049457582 ], [ 109.348064986252524, -0.02722597179096 ], [ 109.347737009669927, -0.027450535379574 ], [ 109.347493261002327, -0.027581295959588 ], [ 109.347160076578561, -0.026933708331604 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 3, "RW": "3", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.349858875324188, -0.02970544249619 ], [ 109.35091572777587, -0.028775931155879 ], [ 109.349025878408312, -0.027134031883738 ], [ 109.3500573320661, -0.026417705331778 ], [ 109.350862998382496, -0.028077646765685 ], [ 109.35181546760532, -0.029332061539426 ], [ 109.350550640017232, -0.030571404245427 ], [ 109.349858875324188, -0.02970544249619 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 4, "RW": "4", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.351567332792001, -0.029006181408649 ], [ 109.350880072395924, -0.028102810538665 ], [ 109.351589525807739, -0.027522917701984 ], [ 109.351804595266344, -0.027587615865584 ], [ 109.352405324744879, -0.028269495676998 ], [ 109.351567332792001, -0.029006181408649 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 5, "RW": "5", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.350550768696394, -0.030570679558315 ], [ 109.351813312812226, -0.029330013344736 ], [ 109.351564860672497, -0.029004003895457 ], [ 109.352403470731446, -0.028269806833771 ], [ 109.353166748852388, -0.029275831229816 ], [ 109.353756311612457, -0.028848998005422 ], [ 109.353501054328049, -0.028312073056401 ], [ 109.354060352875948, -0.028366180832656 ], [ 109.354401493325156, -0.028384210864074 ], [ 109.355161994758632, -0.029549819421383 ], [ 109.354568722562618, -0.029903236311242 ], [ 109.354385781450333, -0.029619533342346 ], [ 109.352952044868275, -0.030634976291072 ], [ 109.352813604061794, -0.030460773525369 ], [ 109.35114130686236, -0.031304510110564 ], [ 109.350550768696394, -0.030570679558315 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 6, "RW": "6", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.358354598979489, -0.029335667202617 ], [ 109.355909837094799, -0.030935985533752 ], [ 109.35572689712815, -0.030682147516448 ], [ 109.35391247663469, -0.031802131753191 ], [ 109.352950808802163, -0.030633731995918 ], [ 109.354387017366449, -0.02961704460661 ], [ 109.354571194441519, -0.029899503183123 ], [ 109.355160758697949, -0.029548575128139 ], [ 109.35544320532675, -0.030003992988381 ], [ 109.35674221568506, -0.029060731518555 ], [ 109.357031458701641, -0.029496238903103 ], [ 109.357921361029824, -0.028882745378805 ], [ 109.358354598979489, -0.029335667202617 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 7, "RW": "7", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.350900982850845, -0.025205342708807 ], [ 109.351472017335112, -0.025019915580229 ], [ 109.352094967705057, -0.024942745213196 ], [ 109.352596845303012, -0.026555401340272 ], [ 109.352641354003325, -0.02689883933137 ], [ 109.353471958430973, -0.026953560622055 ], [ 109.353476883037274, -0.026401071315869 ], [ 109.353842743184202, -0.026396081017148 ], [ 109.353842733523834, -0.026117347899825 ], [ 109.354065217780658, -0.026167113882132 ], [ 109.354060352910892, -0.02836711409052 ], [ 109.353501672347136, -0.028312384119149 ], [ 109.353758783676938, -0.028849931168257 ], [ 109.353165512921095, -0.029278008882593 ], [ 109.35242881029238, -0.028302469974698 ], [ 109.351805831216069, -0.027585749298444 ], [ 109.351593233974782, -0.027526028435521 ], [ 109.351483201947858, -0.026788756175575 ], [ 109.351082697250703, -0.025788314030355 ], [ 109.350900982850845, -0.025205342708807 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 8, "RW": "8", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.349961184075127, -0.024054583261681 ], [ 109.350695376850538, -0.023955011692952 ], [ 109.350726273571595, -0.023835553155247 ], [ 109.351301019842225, -0.023754652187026 ], [ 109.351475339387733, -0.025027614874249 ], [ 109.350906776739464, -0.025206820178689 ], [ 109.351097143842509, -0.025806589906183 ], [ 109.350489033757498, -0.026140096647531 ], [ 109.350108301441963, -0.025010239707175 ], [ 109.349961184075127, -0.024054583261681 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 9, "RW": "9", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.351096525621301, -0.025800368183154 ], [ 109.351495794616824, -0.026809520784589 ], [ 109.351609533789514, -0.027521283758427 ], [ 109.350882776403964, -0.028108643323251 ], [ 109.35006014473781, -0.02642817879043 ], [ 109.350491274260733, -0.026146396090194 ], [ 109.350488801931462, -0.026137996815088 ], [ 109.351096525621301, -0.025800368183154 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 10, "RW": "10", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.348672994517784, -0.025704325498706 ], [ 109.348789166932661, -0.025296173828557 ], [ 109.349064799099565, -0.02527127746674 ], [ 109.349083331406121, -0.025029250339192 ], [ 109.34951346721499, -0.025036079884488 ], [ 109.349536023097485, -0.024990349214284 ], [ 109.3501157176878, -0.025013972510572 ], [ 109.350492742074451, -0.026147562616903 ], [ 109.349632491381826, -0.026710039461646 ], [ 109.348672994517784, -0.025704325498706 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 11, "RW": "11", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.346401573009175, -0.025369383689146 ], [ 109.346285382716417, -0.025280096011726 ], [ 109.346037847181805, -0.024760886695311 ], [ 109.346327679227016, -0.023586005458576 ], [ 109.34670789415631, -0.023479876095859 ], [ 109.346764359733839, -0.023400286291776 ], [ 109.347355387973593, -0.023282780814308 ], [ 109.347750663212338, -0.023263819013272 ], [ 109.348059355125002, -0.023278969018216 ], [ 109.348330402333204, -0.023316859572133 ], [ 109.348209958112875, -0.023980095654413 ], [ 109.348081033106169, -0.024297503883369 ], [ 109.347429779200397, -0.024604507164399 ], [ 109.3467334985945901, -0.025207327074446 ], [ 109.346401573009175, -0.025369383689146 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 12, "RW": "12", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.348081033045474, -0.02429560893349 ], [ 109.34790084103598, -0.025360103111553 ], [ 109.347833079114224, -0.025348735704552 ], [ 109.347161164805129, -0.026934833422733 ], [ 109.347131989197678, -0.026921569806714 ], [ 109.34709998820847, -0.026852405197665 ], [ 109.347036929850219, -0.026784189170021 ], [ 109.346999283636961, -0.026759556133334 ], [ 109.346579269094704, -0.025790776095887 ], [ 109.346402321705838, -0.025371049859969 ], [ 109.346401586381276, -0.025369154930703 ], [ 109.346733683723158, -0.025207895000473 ], [ 109.347434808342172, -0.024603381872745 ], [ 109.348081033045474, -0.02429560893349 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 13, "RW": "13", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.34790850251072, -0.025362776540847 ], [ 109.348079039070527, -0.024301336916668 ], [ 109.348196451853042, -0.024003932577761 ], [ 109.349542484847206, -0.024145745465197 ], [ 109.349965201112752, -0.02405364986938 ], [ 109.350114790764835, -0.025016772330054 ], [ 109.349535096132698, -0.024991904684434 ], [ 109.349512849224809, -0.025036702080759 ], [ 109.349085185439321, -0.025029250277078 ], [ 109.34906294512848, -0.025273144057573 ], [ 109.348793493074112, -0.0252980402112 ], [ 109.348674848699616, -0.025708680669976 ], [ 109.348064240614931, -0.02533539547811 ], [ 109.34790850251072, -0.025362776540847 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 14, "RW": "14", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.36019078263655, -0.031755824095531 ], [ 109.361824854309162, -0.033525193205477 ], [ 109.357662116747605, -0.036257946220039 ], [ 109.356144225641586, -0.034729969837113 ], [ 109.358586506049761, -0.033112218985335 ], [ 109.359679101216599, -0.032330728427376 ], [ 109.36019078263655, -0.031755824095531 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 15, "RW": "15", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.358351508914097, -0.029334422987275 ], [ 109.358468934438946, -0.029460096367681 ], [ 109.359225359337756, -0.029181335411557 ], [ 109.359232770772635, -0.029061878933375 ], [ 109.3605305591811, -0.02863875514028 ], [ 109.361534188254879, -0.028509306152122 ], [ 109.361000302253842, -0.030231482521969 ], [ 109.360189546998413, -0.031764534483861 ], [ 109.35967539368113, -0.03234192759883 ], [ 109.357697844361965, -0.03373567165535 ], [ 109.356145461480949, -0.034726236758212 ], [ 109.355265370465403, -0.033596415212136 ], [ 109.353910622561102, -0.031800887487921 ], [ 109.35572627902171, -0.030679658859551 ], [ 109.355916635002345, -0.030932252229847 ], [ 109.358351508914097, -0.029334422987275 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 16, "RW": "16", "Kelurahan": "Dalam Bugis" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.361821146305672, -0.033525193372107 ], [ 109.360183366613427, -0.031755824411153 ], [ 109.360989178281088, -0.030232727305243 ], [ 109.361503289763718, -0.028550370272791 ], [ 109.362116285559196, -0.026892898604814 ], [ 109.363653888946061, -0.027455279391427 ], [ 109.366009824866993, -0.030760117161085 ], [ 109.361821146305672, -0.033525193372107 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 17, "RW": "1", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.360569738511487, -0.025717892208864 ], [ 109.360326759250313, -0.020638561852866 ], [ 109.363062567167717, -0.020627621322702 ], [ 109.363105826832097, -0.023734968716206 ], [ 109.362533908033882, -0.025690662350783 ], [ 109.360569738511487, -0.025717892208864 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 18, "RW": "2", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.3572615999947, -0.025804925684188 ], [ 109.354255958763034, -0.025644770978561 ], [ 109.354058998874763, -0.025606750282422 ], [ 109.352491401680993, -0.024986140301766 ], [ 109.352092086148531, -0.024949484217836 ], [ 109.351881596521466, -0.02370001411377 ], [ 109.352314636613627, -0.023693209756525 ], [ 109.353743282183814, -0.024294813381785 ], [ 109.355621132025149, -0.024273022407593 ], [ 109.356268664902871, -0.024251271460638 ], [ 109.356268669094014, -0.024381650917168 ], [ 109.357132047717286, -0.02442508250531 ], [ 109.357229183574958, -0.02460978332159 ], [ 109.3572615999947, -0.025804925684188 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 19, "RW": "3", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.354399728330549, -0.028385457728233 ], [ 109.357489003345847, -0.028389414708672 ], [ 109.357922059146816, -0.028884431650081 ], [ 109.35703105140675, -0.02949765636563 ], [ 109.356736946634598, -0.029058995708154 ], [ 109.355444614659774, -0.030005656198593 ], [ 109.354399728330549, -0.028385457728233 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 20, "RW": "4", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.348329902653418, -0.023314756174219 ], [ 109.349356181669819, -0.023184683071075 ], [ 109.350057678412199, -0.023059713316152 ], [ 109.351644134098123, -0.022649509829743 ], [ 109.352580356684754, -0.02238600502029 ], [ 109.352731458214009, -0.022711950680641 ], [ 109.352674808537742, -0.023035186358779 ], [ 109.352601965494259, -0.023192731219366 ], [ 109.352405013813026, -0.02343176756797 ], [ 109.352314636634915, -0.023693888819521 ], [ 109.351885643607119, -0.023699334921585 ], [ 109.352095795794327, -0.024943372522535 ], [ 109.351474567374197, -0.025021146073904 ], [ 109.351305897002021, -0.023752659831413 ], [ 109.350731209727556, -0.023834165845305 ], [ 109.350698836417536, -0.02394824975139 ], [ 109.349970359121102, -0.024056923534389 ], [ 109.34955215957234, -0.024141141136545 ], [ 109.348195694480253, -0.024004692428296 ], [ 109.348207835173127, -0.023982961895234 ], [ 109.348329902653418, -0.023314756174219 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 21, "RW": "5", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.352671098693705, -0.023035186473427 ], [ 109.352730446336608, -0.022708555397309 ], [ 109.352576646900431, -0.022388042320796 ], [ 109.353908133798669, -0.022087857124354 ], [ 109.355548549231429, -0.021894955508572 ], [ 109.355610677094901, -0.024274380867878 ], [ 109.353744968517674, -0.024296171450993 ], [ 109.352313624837507, -0.023693209788702 ], [ 109.352402653044265, -0.023433125768708 ], [ 109.352602302586504, -0.023187298705229 ], [ 109.352671098693705, -0.023035186473427 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 22, "RW": "6", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.357920710096138, -0.028883752644106 ], [ 109.357480909345412, -0.028393489367748 ], [ 109.357507797739785, -0.025821214582666 ], [ 109.362558526107136, -0.025647202049928 ], [ 109.361544167843192, -0.028515564698532 ], [ 109.360518918226845, -0.028645982589912 ], [ 109.359240062063407, -0.029064330760443 ], [ 109.359223878813992, -0.029194710331176 ], [ 109.358463040102762, -0.029460930690321 ], [ 109.357920710096138, -0.028883752644106 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 23, "RW": "7", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.354059018088989, -0.026169013350863 ], [ 109.355734525680901, -0.026516633477588 ], [ 109.3575044490252, -0.026511138181835 ], [ 109.357482933189402, -0.028401637993616 ], [ 109.354401751877219, -0.028385457651413 ], [ 109.354051002689204, -0.028358308504791 ], [ 109.354059018088989, -0.026169013350863 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 24, "RW": "8", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.357260588225245, -0.025804925719262 ], [ 109.357224124815858, -0.024612499723607 ], [ 109.357137781165974, -0.024427798553468 ], [ 109.356786995505658, -0.023194638520067 ], [ 109.356786962681099, -0.022097278855416 ], [ 109.356710058514523, -0.021764542088578 ], [ 109.359578052073303, -0.02061956896784 ], [ 109.360338900359082, -0.020635845293252 ], [ 109.360576483795867, -0.025723324422485 ], [ 109.357511507559764, -0.025821214454808 ], [ 109.357260588225245, -0.025804925719262 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 25, "RW": "9", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.352089387988642, -0.02494676805371 ], [ 109.352491401636243, -0.024984782175289 ], [ 109.354064394817939, -0.025601317603818 ], [ 109.35424786420721, -0.025633906271896 ], [ 109.357509821277958, -0.025821214512823 ], [ 109.357503100142395, -0.026515212581053 ], [ 109.355715639374225, -0.026519350388632 ], [ 109.354053622431408, -0.02618259477347 ], [ 109.353840473140167, -0.026117412299638 ], [ 109.353843180901009, -0.026397185697181 ], [ 109.353478942525172, -0.02640806355491 ], [ 109.353468169779291, -0.026962178702748 ], [ 109.352626370342378, -0.026891586511579 ], [ 109.352577792277515, -0.026527610478128 ], [ 109.352089387988642, -0.02494676805371 ] ] ] ] } },
+            { "type": "Feature", "properties": { "fid": 26, "RW": "10", "Kelurahan": "Tanjung Hilir" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 109.355547537459685, -0.021894955538271 ], [ 109.356711744778579, -0.021763862980226 ], [ 109.356787300017061, -0.022099995082276 ], [ 109.356788681705865, -0.023191922230991 ], [ 109.357142165500861, -0.024427798410179 ], [ 109.356267994488675, -0.024378934700726 ], [ 109.356262594278206, -0.024251271657921 ], [ 109.355612363337457, -0.02427302269269 ], [ 109.355547537459685, -0.021894955538271 ] ] ] ] } }
+            ]
+        };
+        
+        // 2. DATA SEKOLAH
+        var sekolah_json = {
+            "type": "FeatureCollection",
+            "name": "data_sekolah",
+            "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+            "features": [
+                { "type": "Feature", "properties": { "id": 1, "Nama Sekol": "SDN 05 Tanjung Raya 1", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.351982368913554, -0.029067924775499 ] } },
+                { "type": "Feature", "properties": { "id": 2, "Nama Sekol": "SDN 14 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.355665169787088, -0.023751516118172 ] } },
+                { "type": "Feature", "properties": { "id": 3, "Nama Sekol": "Pondok Pesantrean Manba Usshafa", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.351650880570617, -0.027035467175541 ] } },
+                { "type": "Feature", "properties": { "id": 4, "Nama Sekol": "SDN 13 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.351219795072439, -0.025999683412535 ] } },
+                { "type": "Feature", "properties": { "id": 5, "Nama Sekol": "SMA Islam Haruniah", "auxiliary_storage_labeling_positionx": 984495.97075076366, "auxiliary_storage_labeling_positiony": 9996873.3399700578 }, "geometry": { "type": "Point", "coordinates": [ 109.350004457461708, -0.028271943021264 ] } },
+                { "type": "Feature", "properties": { "id": 6, "Nama Sekol": "SMP N 4 Pontianak", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.35259718686882, -0.030179818042702 ] } },
+                { "type": "Feature", "properties": { "id": 7, "Nama Sekol": "SDN 18 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.354140359969179, -0.026982022313984 ] } },
+                { "type": "Feature", "properties": { "id": 8, "Nama Sekol": "MIS Darul Ihsan Pontianak", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.354620914257097, -0.028143005544076 ] } },
+                { "type": "Feature", "properties": { "id": 9, "Nama Sekol": "SDN 07 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.353860619806127, -0.029338183042423 ] } },
+                { "type": "Feature", "properties": { "id": 10, "Nama Sekol": "SDN 28 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.353998913885789, -0.023405118247485 ] } },
+                { "type": "Feature", "properties": { "id": 11, "Nama Sekol": "SDN 21 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.359739670461536, -0.025574685610568 ] } },
+                { "type": "Feature", "properties": { "id": 12, "Nama Sekol": "SDN 25 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.347084347518631, -0.023796350229864 ] } },
+                { "type": "Feature", "properties": { "id": 13, "Nama Sekol": "SDN 02 Pontianak Timur", "auxiliary_storage_labeling_positionx": null, "auxiliary_storage_labeling_positiony": null }, "geometry": { "type": "Point", "coordinates": [ 109.356494870546925, -0.03160423024842 ] } }
+            ]
+        };
+
+        // 3. DATA BATAS KELURAHAN
+        var lurah_json = {
+            "type": "FeatureCollection",
+            "name": "batas_lurah",
+            "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+            "features": [
+                { "type": "Feature", "properties": { "id": 1, "NAMA JALAN": "Batas Kelurahan Tanjung Hilir dan Dalam Bugis" }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 109.348329838299733, -0.023310510475929 ], [ 109.348195555296044, -0.024001180359744 ], [ 109.349553123543828, -0.024143654879933 ], [ 109.350696518092576, -0.023949939885725 ], [ 109.350732812813476, -0.023833001011993 ], [ 109.351306325099529, -0.023759896724088 ], [ 109.35147333875571, -0.025037982798278 ], [ 109.352097667798262, -0.02495756736539 ], [ 109.352589564087097, -0.026545341871135 ], [ 109.352618615368414, -0.026903461678592 ], [ 109.35346073682696, -0.026932665695797 ], [ 109.353482497522592, -0.026413755724485 ], [ 109.353845479648157, -0.026399125745234 ], [ 109.353845470273427, -0.026128708413046 ], [ 109.354063261535643, -0.026179860820803 ], [ 109.354048821182417, -0.028372433696254 ], [ 109.354404544450389, -0.028387037334946 ], [ 109.355449994955677, -0.030002189572578 ], [ 109.356727652809425, -0.029055681251016 ], [ 109.357036204112092, -0.029505144787444 ], [ 109.357916408362797, -0.02878402989723 ], [ 109.358479051577888, -0.029488643587842 ], [ 109.359219520260467, -0.029210890431158 ], [ 109.359277590297964, -0.029035483597244 ], [ 109.3615570810789, -0.028520145591319 ], [ 109.362126896311608, -0.026846478339422 ] ] ] } }
+            ]
+        };
+
+        // --- MAP INITIALIZATION ---
+        var map = L.map('map', { 
+            zoomControl: false, // Kita buat custom zoom nanti jika perlu, atau andalkan scroll/pinch
+            zoomAnimation: true,
+            fadeAnimation: true,
+            markerZoomAnimation: true,
+            attributionControl: false
+        }).setView([-0.027, 109.35], 14);
+
+        // Tile Layer: Light & Clean (CartoDB Positron) untuk kontras terbaik dengan Glassmorphism
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20,
+            subdomains: 'abcd'
+        }).addTo(map);
+
+        L.control.attribution({position: 'bottomright'}).addTo(map);
+
+        // --- LOGIC ---
+        var geojsonLayer = null;
+        var maxSuspek = 0; 
+        var minSuspek = Infinity; // Mencari angka kasus terkecil (>0)
+
+        // Color Helper (Dinamis: Kasus Terkecil -> Merah Terang, Kasus Tertinggi -> Merah Gelap)
+function getSuspekColor(jumlahSuspek) {
+    if (jumlahSuspek === 0) return '#10b981'; // Tetap Hijau jika 0
+    
+    // Gradasi merah muda terang -> merah gelap
+    // Hitung posisi relatif antara minSuspek dan maxSuspek
+    var position = 0;
+    if (maxSuspek > minSuspek) {
+        position = (jumlahSuspek - minSuspek) / (maxSuspek - minSuspek);
+    }
+    
+    // Warna dari merah muda terang (#ffb3b3) ke merah gelap (#990000)
+    // Menggunakan gradasi yang lebih smooth
+    if (position < 0.2) return '#ffcccc'; // Merah muda sangat terang
+    if (position < 0.4) return '#ff9999'; // Merah muda terang
+    if (position < 0.6) return '#ff6666'; // Merah muda
+    if (position < 0.8) return '#ff3333'; // Merah terang
+    return '#990000'; // Merah gelap untuk kasus tertinggi
+}
+
+        function getRiskInfo(jumlahSuspek) {
+            if (jumlahSuspek === 0) return { label: 'AMAN', class: 'risk-low' };
+            if (jumlahSuspek <= 4) return { label: 'MENENGAH', class: 'risk-medium' };
+            return { label: 'TINGGI', class: 'risk-high' };
+        }
+
+        // --- LOAD DATA ---
+        var linkCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=1664941825&single=true&output=csv';
+
+        Papa.parse(linkCSV, {
+            download: true, 
+            header: true,
+            complete: function(results) {
+                document.getElementById('loader').classList.add('hidden');
+                
+                var dataStats = {};
+// Reset statistik dinamis
+                maxSuspek = 0; 
+                minSuspek = Infinity;
+
+                results.data.forEach(function(baris) {
+                    if (baris.Kelurahan && baris.RW) {
+                        var uniqueID = baris.Kelurahan.trim() + "_" + baris.RW.trim();
+                        var valSuspek = parseInt(baris.Kasus) || 0; 
+                        var valPositif = parseInt(baris.Positif) || 0;
+
+                        // Cari Angka Tertinggi
+                        if (valSuspek > maxSuspek) maxSuspek = valSuspek;
+                        
+                        // Cari Angka Terkecil (Hanya jika lebih dari 0)
+                        if (valSuspek > 0 && valSuspek < minSuspek) minSuspek = valSuspek;
+
+                        dataStats[uniqueID] = { suspek: valSuspek, positif: valPositif };
+                        
+                    }
+                });
+                
+                // Pengaman jika tidak ada kasus > 0 di database
+                if (minSuspek === Infinity) minSuspek = 0;
+                
+                
+  // GEOJSON LAYER (Diperbarui: Opacity 100% & Hapus Hover)
+                geojsonLayer = L.geoJSON(rw_json, {
+                    style: function(feature) {
+                        var uniqueID = feature.properties.Kelurahan + "_" + feature.properties.RW;
+                        var stats = dataStats[uniqueID] || { suspek: 0 };
+                        
+                        return {
+                            fillColor: getSuspekColor(stats.suspek),
+                            weight: 1.5, // Sedikit dipertipis agar batas antar warna solid lebih rapi
+                            opacity: 1,
+                            color: 'white',
+                            fillOpacity: 1.0 // Opacity 100% sesuai permintaan
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        var uniqueID = feature.properties.Kelurahan + "_" + feature.properties.RW;
+                        var stats = dataStats[uniqueID] || { suspek: 0, positif: 0 };
+
+// --- TAMBAHAN: MEMBUAT LABEL DI TENGAH POLIGON ---
+var center = layer.getBounds().getCenter();
+                        L.marker(center, {
+                            icon: L.divIcon({
+                                className: 'rw-map-label',
+                                // Menambahkan sedikit style inline untuk teks "RW" agar lebih tipis warnanya
+                                html: `<div><span style="color:#64748b; margin-right:2px;">RW</span>${feature.properties.RW}</div>`, 
+                                iconSize: null, // Hapus ukuran fix agar mengikuti lebar teks (auto width)
+                                iconAnchor: [0, 0] // Kita atur posisi lewat CSS (transform translate)
+                            }),
+                            interactive: false,
+                            zIndexOffset: 1000
+                        }).addTo(map);
+layer.bindTooltip(`
+    <div class="rw-tooltip-minimal">
+        <div class="rw-header-minimal">
+            <div class="rw-badge-minimal ${stats.suspek === 0 ? 'safe' : (stats.suspek <= 4 ? 'warning' : 'danger')}">
+                RW ${feature.properties.RW}
+            </div>
+            <span class="rw-kelurahan-minimal">${feature.properties.Kelurahan}</span>
+        </div>
+        
+        <div class="rw-stats-minimal">
+            <div class="rw-stat-item-minimal">
+                <div class="rw-stat-icon-minimal ${stats.suspek === 0 ? 'safe' : 'danger'}">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="rw-stat-content-minimal">
+                    <div class="rw-stat-value-minimal">${stats.suspek}</div>
+                    <div class="rw-stat-label-minimal">Suspek</div>
+                </div>
+            </div>
+            
+            <div class="rw-stat-item-minimal">
+                <div class="rw-stat-icon-minimal ${stats.positif === 0 ? 'safe' : 'danger'}">
+                    <i class="fas fa-virus"></i>
+                </div>
+                <div class="rw-stat-content-minimal">
+                    <div class="rw-stat-value-minimal">${stats.positif}</div>
+                    <div class="rw-stat-label-minimal">Positif</div>
+                </div>
+            </div>
+        </div>
+    </div>
+`, { 
+    className: 'glass-tooltip-minimal', 
+    direction: 'top', 
+    offset: [0, -10] 
+});
+                        layer.on({
+                            // Fitur hover (mouseover & mouseout) telah dihapus
+                            
+                              click: function(e) {
+                                  // 1. Cegah event bubbling (agar tidak konflik dengan map click)
+                                  if (window.innerWidth <= 768) {
+                                      e.originalEvent.preventDefault();
+                                      e.originalEvent.stopPropagation();
+                                  }
+                                
+                                  // 2. Langsung ke logika Zoom/Pan (Tanpa ubah warna/garis)
+                                    if (window.innerWidth <= 768) {
+                                        // Mobile: Geser peta perlahan
+                                        map.panTo(e.latlng, {
+                                            animate: true,
+                                            duration: 0.3,
+                                            easeLinearity: 0.3,
+                                            noMoveStart: true
+                                        });
+                                    // Mobile: TIDAK otomatis buka sidebar, cukup update data saja
+                                } else {
+                                    // Desktop: Terbang ke tengah area
+                                    map.flyTo(e.target.getBounds().getCenter(), 16, { 
+                                        duration: 0.6,
+                                        easeLinearity: 0.5,
+                                        noMoveStart: true
+                                    });
+                                }
+                                e.target.openTooltip(); 
+                            }
+                        });
+                    }
+                }).addTo(map);
+                
+// BATAS LURAH (Diperbarui: Garis Putih Tebal Solid)
+// BATAS LURAH (Efek Double Stroke)
+
+// Layer 1: Garis Luar (Hitam/Gelap) - Lebih Tebal
+L.geoJSON(lurah_json, { 
+    style: { 
+        color: '#334155', // Warna gelap (Sama dengan border di legenda)
+        weight: 8,        // Lebih tebal (misal 8px)
+        opacity: 0.9,     
+        lineCap: 'round', // Ujung membulat agar sambungan rapi
+        lineJoin: 'round'
+    } 
+}).addTo(map);
+
+// Layer 2: Garis Dalam (Putih) - Lebih Tipis, menimpa layer 1
+L.geoJSON(lurah_json, { 
+    style: { 
+        color: 'white',   // Warna putih
+        weight: 4,        // Lebih tipis (misal 4px)
+        opacity: 1,
+        lineCap: 'round',
+        lineJoin: 'round'
+    } 
+}).addTo(map);
+                
+                // SEKOLAH
+// SEKOLAH (dengan icon yang konsisten)
+                // SEKOLAH
+                var sekolahLayer = L.geoJSON(sekolah_json, {
+                    pointToLayer: function (feature, latlng) {
+                        var namaSekolah = feature.properties["Nama Sekol"] || "";
+                        var iconType = "fa-school";  // Semua pakai ikon sekolah
+                        var iconColor = "#3b82f6";   // Semua pakai warna biru
+                        
+                        // Tetap gunakan desain bulat yang sudah ada
+                        return L.marker(latlng, {
+                            icon: L.divIcon({
+                                html: `<div style="background:${iconColor}; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.2);"><i class="fas ${iconType}"></i></div>`,
+                                className: '',
+                                iconSize: [36, 36],
+                                iconAnchor: [18, 18]
+                            })
+                        });
+                    },
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(`<div style="font-family:'Plus Jakarta Sans'; padding:5px;">
+                            <strong>${feature.properties["Nama Sekol"]}</strong>
+                            <br><small style="color:#64748b; font-size:12px;">Fasilitas Pendidikan</small>
+                        </div>`, {
+                            className: 'custom-popup',
+                            closeOnClick: false, // Biarkan popup tetap terbuka meski klik di peta lain
+                            autoClose: false // Jangan auto close popup lain
+                        });
+                        
+                        // Event click khusus untuk mobile
+                        if (window.innerWidth <= 768) {
+                            layer.on('click', function(e) {
+                                e.originalEvent.preventDefault();
+                                e.originalEvent.stopPropagation();
+                                
+                                // Buka popup langsung
+                                layer.openPopup();
+                                
+                                // Jangan buka sidebar untuk sekolah (opsional)
+                                // document.getElementById('sidebar').classList.remove('active');
+                            });
+                        }
+                    }
+                }).addTo(map);
+
+                // MARKER KHUSUS (Puskesmas & Keraton)
+                const markers = [
+                    { coords: [-0.027447927, 109.35127436], icon: 'fa-hospital', color: '#10b981', title: 'UPT Puskesmas Kampung Dalam' },
+                    { coords: [-0.028725593, 109.35030888], icon: 'fa-landmark', color: '#8b5cf6', title: 'Keraton Kadriyah' }
+                ];
+
+                markers.forEach(m => {
+                    L.marker(m.coords, {
+                        icon: L.divIcon({
+                            html: `<div style="background:${m.color}; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.2);"><i class="fas ${m.icon}"></i></div>`,
+                            className: '',
+                            iconSize: [36, 36],
+                            iconAnchor: [18, 18]
+                        })
+                    }).addTo(map).bindPopup(`<div style="font-family:'Plus Jakarta Sans'; padding:5px;">
+                        <strong>${m.title}</strong>
+                        <br><small style="color:#64748b; font-size:12px;">${m.title.includes('Puskesmas') ? 'Fasilitas Kesehatan' : 'Cagar Budaya'}</small>
+                    </div>`, {
+                        className: 'custom-popup',
+                        closeOnClick: false,
+                        autoClose: false
+                    });
+                    
+                    // Event click untuk mobile (sama seperti sekolah)
+                    if (window.innerWidth <= 768) {
+                        layer.on('click', function(e) {
+                            e.originalEvent.preventDefault();
+                            e.originalEvent.stopPropagation();
+                            layer.openPopup();
+                        });
+                    }
+                });
+
+                map.fitBounds(geojsonLayer.getBounds(), { padding: [50, 50] });
+            }
+        });
+
+        // Close Bottom Sheet when clicking map on mobile
+        // Close Bottom Sheet when clicking map on mobile
+        map.on('click', (e) => {
+            if (window.innerWidth <= 768) {
+                // Hanya tutup sidebar jika klik di area kosong peta (bukan pada layer)
+                if (!e.originalEvent._stopped) {
+                    sidebar.classList.remove('active');
+                }
+                
+                // Tutup semua popup yang terbuka
+                map.eachLayer(function(layer) {
+                    if (layer.closePopup) {
+                        layer.closePopup();
+                    }
+                });
+            }
+        });
+        
+        // --- LOGIKA ZOOM UNTUK LABEL ---
+        map.on('zoomend', function() {
+            var currentZoom = map.getZoom();
+            var mapContainer = map.getContainer();
+            
+            // Ubah angka 15 sesuai keinginan (semakin besar angka, semakin harus zoom in baru muncul)
+            if (currentZoom >= 17) { 
+                mapContainer.classList.add('show-rw-labels');
+            } else {
+                mapContainer.classList.remove('show-rw-labels');
+            }
+        });
+        
+        // Jalankan sekali saat awal load agar statusnya benar
+        map.fire('zoomend');
+        
+        // --- FITUR TOGGLE LEGENDA ---
+        function toggleLegend() {
+            var sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('minimized');
+        }
+
+    </script>
+</body>
+</html>
