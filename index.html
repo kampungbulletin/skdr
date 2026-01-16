@@ -1552,6 +1552,7 @@ if (pageNum === 3) {
 
 } else if (pageNum === 9) {
     // --- HALAMAN 9: IDL KELURAHAN DALAM BUGIS ---
+    // PERBAIKAN: Menggunakan ${currentYear} agar judul tahun dinamis
     pageContent = `
         ${createMiniHeader(pageNum)}
         <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
@@ -1568,7 +1569,7 @@ if (pageNum === 3) {
                         Kelurahan Dalam Bugis
                     </h3>
                     <p class="text-slate-500 text-sm font-medium leading-relaxed">
-                        Cakupan Imunisasi Dasar Lengkap (IDL) per RW Tahun 2025
+                        Cakupan Imunisasi Dasar Lengkap (IDL) per RW Tahun ${currentYear}
                     </p>
                 </div>
             </div>
@@ -1608,7 +1609,7 @@ if (pageNum === 3) {
             </div>
 
             <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
-                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span>UPT Puskesmas Kampung Dalam • Halaman ${pageNum}/10</span>
                 <span class="flex items-center gap-1">
                     Data PWS KIA/Imunisasi
                     <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
@@ -1619,6 +1620,7 @@ if (pageNum === 3) {
 
 } else if (pageNum === 10) {
     // --- HALAMAN 10: IDL KELURAHAN TANJUNG HILIR ---
+    // PERBAIKAN: Menggunakan ${currentYear} agar judul tahun dinamis
     pageContent = `
         ${createMiniHeader(pageNum)}
         <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
@@ -1635,7 +1637,7 @@ if (pageNum === 3) {
                         Kelurahan Tanjung Hilir
                     </h3>
                     <p class="text-slate-500 text-sm font-medium leading-relaxed">
-                        Cakupan Imunisasi Dasar Lengkap (IDL) per RW Tahun 2025
+                        Cakupan Imunisasi Dasar Lengkap (IDL) per RW Tahun ${currentYear}
                     </p>
                 </div>
             </div>
@@ -1675,7 +1677,7 @@ if (pageNum === 3) {
             </div>
 
             <footer class="flex justify-between items-center text-[9px] text-slate-400 uppercase tracking-widest font-semibold pt-4 border-t border-slate-200/60 mt-auto">
-                <span>UPT Puskesmas Kampung Dalam &bull; Halaman ${pageNum}/10</span>
+                <span>UPT Puskesmas Kampung Dalam • Halaman ${pageNum}/10</span>
                 <span class="flex items-center gap-1">
                     Data PWS KIA/Imunisasi
                     <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
@@ -2521,94 +2523,116 @@ function renderEmptyKLbPasti() {
     if(recentContainer) recentContainer.innerHTML = `<div class="text-slate-400 text-xs text-center">Data kosong.</div>`;
 }   
 
-// --- LOGIKA HALAMAN 9 & 10: CAKUPAN IDL (INDEPENDEN DARI TAHUN) ---
-const URL_IDL_BUGIS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=1780734819&single=true&output=csv';
-const URL_IDL_TANJUNG = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=800244399&single=true&output=csv';
+// --- LOGIKA BARU HALAMAN 9 & 10: CAKUPAN IDL DENGAN FILTER TAHUN ---
+const URL_IDL_BUGIS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5OWTdOoOXPJSsPTSnrSJNSTRJE59GTO8VHU_VcgA9ERSdZ-LxWiYfUU6ARZl9Otwpm1SnOAqilOEX/pub?gid=1780734819&single=true&output=csv';
+const URL_IDL_TANJUNG = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5OWTdOoOXPJSsPTSnrSJNSTRJE59GTO8VHU_VcgA9ERSdZ-LxWiYfUU6ARZl9Otwpm1SnOAqilOEX/pub?gid=800244399&single=true&output=csv';
 
-// VARIABLE GLOBAL (CACHE) - Agar data tidak hilang/berubah saat ganti tahun
-let cachedIDLBugis = null;
-let cachedIDLTanjung = null;
+// VARIABLE GLOBAL UNTUK MENYIMPAN RAW DATA (MENTAH)
+// Kita simpan raw data agar tidak perlu fetch berulang kali saat ganti tahun
+let rawDataIDLBugis = null;
+let rawDataIDLTanjung = null;
 
-// Fungsi Utama: Mengelola Pengambilan & Tampilan Data IDL
 async function processIDLData() {
-    // 1. Cek apakah data sudah ada di memori? Jika belum, ambil dari Google Sheets.
-    if (!cachedIDLBugis) {
-        console.log("Mengambil data IDL Bugis dari Server...");
-        cachedIDLBugis = await fetchAndParseIDL(URL_IDL_BUGIS, 'Dalam Bugis');
+    // 1. Fetch RAW data (Semua Tahun) jika belum ada di cache
+    if (!rawDataIDLBugis) {
+        console.log("Mengambil Raw Data IDL Bugis...");
+        rawDataIDLBugis = await fetchRawIDL(URL_IDL_BUGIS, 'Dalam Bugis');
     }
     
-    if (!cachedIDLTanjung) {
-        console.log("Mengambil data IDL Tanjung dari Server...");
-        cachedIDLTanjung = await fetchAndParseIDL(URL_IDL_TANJUNG, 'Tanjung Hilir');
+    if (!rawDataIDLTanjung) {
+        console.log("Mengambil Raw Data IDL Tanjung...");
+        rawDataIDLTanjung = await fetchRawIDL(URL_IDL_TANJUNG, 'Tanjung Hilir');
     }
 
-    // 2. Render Grafik & Interpretasi (Selalu dijalankan karena Canvas di-reset saat ganti halaman/tahun)
-    // Tapi datanya menggunakan 'cachedIDL...' yang TIDAK difilter tahun.
-    
+    // 2. FILTER Data Berdasarkan 'currentYear'
+    // Fungsi filterIDLByYear akan memilah data mentah sesuai tahun yang aktif
+    const bugisData = filterIDLByYear(rawDataIDLBugis, currentYear);
+    const tanjungData = filterIDLByYear(rawDataIDLTanjung, currentYear);
+
+    // 3. Render Grafik & Interpretasi
     // Render Bugis (Halaman 9)
-    if (cachedIDLBugis && cachedIDLBugis.labels.length > 0) {
-        renderIDLChart('idlBugisChart', cachedIDLBugis.labels, cachedIDLBugis.values);
-        generateIDLInterpretation('idlBugisInterpretation', cachedIDLBugis.labels, cachedIDLBugis.values, 'Dalam Bugis');
+    if (bugisData.labels.length > 0) {
+        renderIDLChart('idlBugisChart', bugisData.labels, bugisData.values);
+        generateIDLInterpretation('idlBugisInterpretation', bugisData.labels, bugisData.values, 'Dalam Bugis');
+    } else {
+        // Jika data kosong untuk tahun tersebut (opsional: tampilkan grafik kosong)
+        renderIDLChart('idlBugisChart', [], []);
+        document.getElementById('idlBugisInterpretation').innerText = `Data IDL untuk tahun ${currentYear} belum tersedia.`;
     }
 
     // Render Tanjung (Halaman 10)
-    if (cachedIDLTanjung && cachedIDLTanjung.labels.length > 0) {
-        renderIDLChart('idlTanjungHilirChart', cachedIDLTanjung.labels, cachedIDLTanjung.values);
-        generateIDLInterpretation('idlTanjungHilirInterpretation', cachedIDLTanjung.labels, cachedIDLTanjung.values, 'Tanjung Hilir');
+    if (tanjungData.labels.length > 0) {
+        renderIDLChart('idlTanjungHilirChart', tanjungData.labels, tanjungData.values);
+        generateIDLInterpretation('idlTanjungHilirInterpretation', tanjungData.labels, tanjungData.values, 'Tanjung Hilir');
+    } else {
+        renderIDLChart('idlTanjungHilirChart', [], []);
+        document.getElementById('idlTanjungHilirInterpretation').innerText = `Data IDL untuk tahun ${currentYear} belum tersedia.`;
     }
 
-    // 3. Update Total di Halaman 3
-    updateTotalPage3();
+    // 4. Update Total di Halaman 3 (Menggabungkan hasil filter)
+    updateTotalPage3(bugisData.values, tanjungData.values);
 }
 
-// Fungsi Helper: Hanya Ambil & Rapikan Data (Tanpa Filter Tahun)
-async function fetchAndParseIDL(url, locationName) {
+// Fungsi Fetch Raw Data (Tanpa Filter, Ambil Semua)
+async function fetchRawIDL(url, locationName) {
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: "no-store" });
         const csvText = await response.text();
         const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-
-        const labels = [];
-        const values = [];
-
-        result.data.forEach(row => {
-            const keys = Object.keys(row);
-            // Cari kolom RW dan Cakupan (Tanpa melihat kolom Tahun)
-            const rwKey = keys.find(k => k.trim().toLowerCase().includes('rw')) || keys[0];
-            const valKey = keys.find(k => k.toLowerCase().includes('cakupan') || k.toLowerCase().includes('idl') || k.includes('%')) || keys[1];
-
-            if (row[rwKey] && row[valKey]) {
-                // Format RW
-                let rwLabel = String(row[rwKey]).trim();
-                if (/^\d+$/.test(rwLabel)) rwLabel = "RW " + rwLabel.padStart(2, '0');
-                else if (!rwLabel.toLowerCase().startsWith('rw')) rwLabel = "RW " + rwLabel;
-
-                // Format Angka
-                let rawVal = String(row[valKey]).trim().replace('%', '').replace(',', '.');
-                let finalVal = parseFloat(rawVal);
-
-                if (!isNaN(finalVal)) {
-                    labels.push(rwLabel);
-                    values.push(finalVal);
-                }
-            }
-        });
-
-        return { labels, values }; // Simpan sebagai objek
+        return result.data; // Mengembalikan Array of Objects (Semua baris CSV)
     } catch (error) {
         console.error(`Gagal ambil data ${locationName}:`, error);
-        return { labels: [], values: [] };
+        return [];
     }
 }
 
-// Fungsi Update Halaman 3 (Total Rata-rata)
-function updateTotalPage3() {
+// Fungsi Filter Data Raw Berdasarkan Tahun
+function filterIDLByYear(rawData, yearToFilter) {
+    const labels = [];
+    const values = [];
+
+    if (!rawData) return { labels, values };
+
+    rawData.forEach(row => {
+        const keys = Object.keys(row);
+        
+        // Cari kolom Tahun (Case insensitive)
+        const colTahun = keys.find(k => k.trim().toLowerCase().includes('tahun')) || 'Tahun';
+        
+        // --- LOGIKA FILTER TAHUN ---
+        // Jika kolom tahun ada, dan nilainya TIDAK sama dengan tahun yang dipilih, LEWATI.
+        if (row[colTahun] != yearToFilter) return;
+
+        // Cari kolom RW dan Cakupan
+        const rwKey = keys.find(k => k.trim().toLowerCase().includes('rw')) || keys[0];
+        const valKey = keys.find(k => k.toLowerCase().includes('cakupan') || k.toLowerCase().includes('idl') || k.includes('%')) || keys[1];
+
+        if (row[rwKey] && row[valKey]) {
+            // Format RW
+            let rwLabel = String(row[rwKey]).trim();
+            if (/^\d+$/.test(rwLabel)) rwLabel = "RW " + rwLabel.padStart(2, '0');
+            else if (!rwLabel.toLowerCase().startsWith('rw')) rwLabel = "RW " + rwLabel;
+
+            // Format Angka
+            let rawVal = String(row[valKey]).trim().replace('%', '').replace(',', '.');
+            let finalVal = parseFloat(rawVal);
+
+            if (!isNaN(finalVal)) {
+                labels.push(rwLabel);
+                values.push(finalVal);
+            }
+        }
+    });
+
+    return { labels, values };
+}
+
+// Fungsi Update Halaman 3 (Total Rata-rata dari Data Terfilter)
+function updateTotalPage3(valsBugis, valsTanjung) {
     const elPage3 = document.getElementById('totalIDLCoverage');
     if (!elPage3) return;
 
-    let allValues = [];
-    if (cachedIDLBugis) allValues = allValues.concat(cachedIDLBugis.values);
-    if (cachedIDLTanjung) allValues = allValues.concat(cachedIDLTanjung.values);
+    let allValues = [].concat(valsBugis, valsTanjung);
 
     if (allValues.length > 0) {
         const sum = allValues.reduce((a, b) => a + b, 0);
@@ -2620,13 +2644,20 @@ function updateTotalPage3() {
         if (parseFloat(avg) < 95) elPage3.classList.add('text-rose-600');
         else elPage3.classList.add('text-emerald-600');
     } else {
-        elPage3.innerText = "-";
+        // Jika data kosong, tampilkan strip, JANGAN data dummy
+        elPage3.innerText = "-"; 
+        elPage3.classList.remove('text-rose-600', 'text-emerald-600');
+        elPage3.classList.add('text-slate-800');
     }
 }
 
 function renderIDLChart(canvasId, labels, data) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+
+    // Hapus chart lama jika ada agar animasi ulang saat ganti tahun
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) existingChart.destroy();
 
     const ctx2d = ctx.getContext('2d');
     
@@ -2696,6 +2727,11 @@ function generateIDLInterpretation(elemId, labels, values, locName) {
     const el = document.getElementById(elemId);
     if (!el) return;
 
+    if (values.length === 0) {
+        el.innerHTML = "Data belum tersedia untuk periode ini.";
+        return;
+    }
+
     // Hitung rata-rata
     const total = values.reduce((a, b) => a + b, 0);
     const avg = (total / values.length).toFixed(1);
@@ -2707,7 +2743,7 @@ function generateIDLInterpretation(elemId, labels, values, locName) {
     const minIdx = values.indexOf(minVal);
 
     let narasi = `
-        Rata-rata cakupan IDL di Kelurahan ${locName} saat ini mencapai <strong class="text-slate-900">${avg}%</strong>. 
+        Rata-rata cakupan IDL di Kelurahan ${locName} pada tahun ${currentYear} mencapai <strong class="text-slate-900">${avg}%</strong>. 
         Cakupan tertinggi dicapai oleh <strong class="text-cyan-700">${labels[maxIdx]}</strong> (${maxVal}%), 
         sedangkan wilayah <strong class="text-rose-600">${labels[minIdx]}</strong> masih perlu perhatian khusus karena cakupan terendah (${minVal}%).
     `;
