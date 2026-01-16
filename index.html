@@ -377,8 +377,8 @@
                             </span>
                         </div>
                         <div>
-                            <div class="text-3xl font-extrabold text-slate-800 tracking-tight">100<span class="text-lg text-slate-500 font-bold">% dari 97 alert</span></div>
-                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1">Alert Direspon</div>
+                            <div class="text-3xl font-extrabold text-slate-800 tracking-tight">100<span class="text-lg text-slate-500 font-bold">% dari 2 alert</span></div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1">Tahun 2026</div>
                         </div>
                     </div>
                 </div>
@@ -716,35 +716,31 @@ results.data.forEach(row => {
     }
 });
 
-                // KONVERSI KE ARRAY UNTUK CHART (Isi kekosongan minggu dengan 0)
-                // Kita mulai dari Minggu 1 sampai Minggu Terakhir yang ditemukan
-                if (maxWeekFound > 0) {
-                    for (let i = 1; i <= maxWeekFound; i++) {
-                        dataMinggu.push(i); // Label sumbu X (1, 2, 3...)
-                        dataKasus.push(weeklyCounts[i] || 0); // Nilai sumbu Y (jumlah kasus atau 0)
-                    }
-                } else {
-                    // Jika data kosong
-                    console.warn("Data kosong atau nama kolom tidak sesuai (Minggu/Nomor_Epid)");
-                }
-
-                totalMinggu = dataMinggu.length;
-
-                // Update UI jika berhasil
-                if (totalMinggu > 0) {
-                    updateUIAfterDataFetch(true);
-                    return { success: true, data: { minggu: dataMinggu, kasus: dataKasus } };
-                } else {
-                    throw new Error("Data valid tidak ditemukan");
-                }
-                
-            } catch (error) {
-                console.error('Error fetching/processing data:', error);
-                useSampleData(); // Fallback ke data contoh
-                updateUIAfterDataFetch(false);
-                return { success: false, data: { minggu: dataMinggu, kasus: dataKasus } };
-            }
+// --- PERBAIKAN DI SINI ---
+        // Paksa loop dari Minggu 1 sampai Minggu 53 (Setahun penuh)
+        // Walaupun data baru ada di minggu 1, sisa mingguan akan diisi 0 (bukan dummy)
+        for (let i = 1; i <= 53; i++) {
+            dataMinggu.push(i); // Label 1, 2, 3... 53
+            dataKasus.push(weeklyCounts[i] || 0); // Jika tidak ada data, isi 0
         }
+
+        totalMinggu = 53; // Set fix 53 minggu untuk sumbu X
+
+        // Update UI selalu success (walaupun 0 kasus) agar tidak muncul notif "Data Contoh"
+        updateUIAfterDataFetch(true);
+        return { success: true, data: { minggu: dataMinggu, kasus: dataKasus } };
+        
+    } catch (error) {
+        console.error('Error fetching/processing data:', error);
+        // HAPUS useSampleData() agar tidak muncul data palsu saat error
+        // Tampilkan grafik kosong saja jika error parah
+        dataMinggu = Array.from({length: 53}, (_, i) => i + 1);
+        dataKasus = new Array(53).fill(0);
+        
+        updateUIAfterDataFetch(true); // Tetap anggap sukses tapi kosong
+        return { success: false, data: { minggu: dataMinggu, kasus: dataKasus } };
+    }
+}
 
         async function parseCSVManually(csvText) {
             // (Logika parsing manual sama seperti sebelumnya)
@@ -752,17 +748,12 @@ results.data.forEach(row => {
             useSampleData(); // Fallback sederhana
         }
 
-        function useSampleData() {
-            dataMinggu = Array.from({length: 47}, (_, i) => `M${i + 1}`);
-            dataKasus = [
-                2, 3, 5, 4, 6, 8, 12, 15, 20, 25,
-                30, 35, 42, 40, 38, 45, 50, 55, 60, 58,
-                65, 70, 75, 80, 78, 72, 68, 65, 60, 55,
-                50, 48, 45, 42, 40, 35, 30, 28, 25, 22,
-                20, 18, 15, 12, 10, 8, 5
-            ];
-            totalMinggu = 47;
-        }
+function useSampleData() {
+    // KITA NOL-KAN SEMUA AGAR TIDAK MUNCUL DATA PALSU
+    dataMinggu = Array.from({length: 53}, (_, i) => i + 1);
+    dataKasus = new Array(53).fill(0);
+    totalMinggu = 53;
+}
 
           function updateUIAfterDataFetch(success) {
               // LOGIKA BARU: Menghitung Total Kasus (Sum) dari array dataKasus
@@ -1841,7 +1832,7 @@ function updateAnalysis() {
         }
 
 // URL Data Penyakit 4 Minggu Terakhir
-        const DISEASE_DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=1260928596&single=true&output=csv';
+        const DISEASE_DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5OWTdOoOXPJSsPTSnrSJNSTRJE59GTO8VHU_VcgA9ERSdZ-LxWiYfUU6ARZl9Otwpm1SnOAqilOEX/pub?gid=1260928596&single=true&output=csv';
 
         async function fetchDiseaseData() {
             try {
@@ -1963,25 +1954,37 @@ function processRWData() {
     // Reset globalRWData untuk Peta
     globalRWData = [];
 
-    // Variabel penampung sementara
+    // --- PERBAIKAN DI SINI: INISIALISASI SEMUA RW DULU ---
     const bugisStats = {};
     const tanjungStats = {};
 
-    // Loop data utama (Single Source)
-globalMainData.forEach(row => {
-    const keys = Object.keys(row);
-    const colTahun = keys.find(k => k.trim().toLowerCase().includes('tahun')) || 'Tahun';
+    // 1. Siapkan Slot untuk Kelurahan Dalam Bugis (RW 01 - RW 16)
+    for (let i = 1; i <= 16; i++) {
+        let key = "RW " + i.toString().padStart(2, '0'); // Hasil: "RW 01", "RW 02"...
+        bugisStats[key] = { total: 0, positif: 0 };
+    }
 
-    // --- FILTER TAHUN ---
-    if (row[colTahun] != currentYear) return;
+    // 2. Siapkan Slot untuk Kelurahan Tanjung Hilir (RW 01 - RW 10)
+    for (let i = 1; i <= 10; i++) {
+        let key = "RW " + i.toString().padStart(2, '0');
+        tanjungStats[key] = { total: 0, positif: 0 };
+    }
+
+    // Loop data utama (Single Source)
+    globalMainData.forEach(row => {
+        const keys = Object.keys(row);
+        const colTahun = keys.find(k => k.trim().toLowerCase().includes('tahun')) || 'Tahun';
+
+        // --- FILTER TAHUN ---
+        if (row[colTahun] != currentYear) return;
 
         // 1. Deteksi Kolom
         const colKel = keys.find(k => k.toLowerCase().includes('kelurahan')) || 'Kelurahan';
-        const colRW  = keys.find(k => k.toLowerCase().includes('rw') || k.toLowerCase().includes('RW')) || 'RW'; // Asumsi RW ada di alamat/kolom RW
-        const colKlasifikasi = keys.find(k => k.toLowerCase().includes('klasifikasi') || k.toLowerCase().includes('Klasifikasi')) || 'Klasifikasi';
+        const colRW  = keys.find(k => k.toLowerCase().includes('rw') || k.toLowerCase().includes('RW')) || 'RW';
+        const colKlasifikasi = keys.find(k => k.toLowerCase().includes('klasifikasi')) || 'Klasifikasi';
         const colEpid = keys.find(k => k.toLowerCase().includes('nomor_epid')) || 'Nomor_Epid';
 
-        // Pastikan baris memiliki Nomor_Epid (Syarat 1: "berdasarkan seberapa banyak Nomor_Epid")
+        // Pastikan baris memiliki Nomor_Epid
         if (row[colEpid]) {
             
             // Ambil Nilai
@@ -1989,34 +1992,40 @@ globalMainData.forEach(row => {
             let rwRaw = String(row[colRW] || '').trim();
             let status = String(row[colKlasifikasi] || '').toLowerCase();
             
-            // Format RW (Misal "1" jadi "RW 01")
+            // Format RW agar cocok dengan kunci inisialisasi (misal "1" jadi "RW 01")
             let rwLabel = rwRaw;
             if (/^\d+$/.test(rwLabel)) rwLabel = "RW " + rwLabel.padStart(2, '0');
             else if (!rwLabel.toLowerCase().startsWith('rw')) rwLabel = "RW " + rwLabel;
 
             // Logic Hitung: Tambah 1 Kasus setiap ada Nomor Epid
-            const isPositif = status.includes('positif') ? 1 : 0; // Syarat 2: Status Positif dari Klasifikasi
+            const isPositif = status.includes('positif') ? 1 : 0;
 
-            // --- KELURAHAN DALAM BUGIS ---
+            // --- UPDATE DATA JIKA RW DITEMUKAN ---
+            
+            // Kelurahan Dalam Bugis
             if (kelurahan.toLowerCase().includes('bugis')) {
-                if (!bugisStats[rwLabel]) bugisStats[rwLabel] = { total: 0, positif: 0 };
-                bugisStats[rwLabel].total += 1;
-                bugisStats[rwLabel].positif += isPositif;
+                // Cek apakah RW valid (ada di range 1-16 yg kita buat)
+                if (bugisStats[rwLabel]) {
+                    bugisStats[rwLabel].total += 1;
+                    bugisStats[rwLabel].positif += isPositif;
+                }
             }
 
-            // --- KELURAHAN TANJUNG HILIR ---
+            // Kelurahan Tanjung Hilir
             else if (kelurahan.toLowerCase().includes('tanjung hilir')) {
-                if (!tanjungStats[rwLabel]) tanjungStats[rwLabel] = { total: 0, positif: 0 };
-                tanjungStats[rwLabel].total += 1;
-                tanjungStats[rwLabel].positif += isPositif;
+                // Cek apakah RW valid (ada di range 1-10 yg kita buat)
+                if (tanjungStats[rwLabel]) {
+                    tanjungStats[rwLabel].total += 1;
+                    tanjungStats[rwLabel].positif += isPositif;
+                }
             }
         }
     });
 
-    // --- RENDER CHART & SIMPAN KE GLOBAL DATA (UNTUK PETA) ---
+    // --- RENDER CHART (DATA AKAN BERURUTAN KARENA SUDAH DI-INIT) ---
 
     // 1. Proses Dalam Bugis
-    const labelsBugis = Object.keys(bugisStats).sort();
+    const labelsBugis = Object.keys(bugisStats).sort(); // Akan urut RW 01 - RW 16
     const dataKasusBugis = labelsBugis.map(rw => bugisStats[rw].total);
     const dataPositifBugis = labelsBugis.map(rw => bugisStats[rw].positif);
     
@@ -2030,16 +2039,16 @@ globalMainData.forEach(row => {
         });
     });
 
-    renderRWChart(labelsBugis, dataKasusBugis, dataPositifBugis); // Pakai fungsi render yg sudah ada
-    generateRWInterpretation(labelsBugis, dataKasusBugis, dataPositifBugis); // Pakai fungsi narasi yg sudah ada
+    renderRWChart(labelsBugis, dataKasusBugis, dataPositifBugis);
+    generateRWInterpretation(labelsBugis, dataKasusBugis, dataPositifBugis); 
 
 
     // 2. Proses Tanjung Hilir
-    const labelsTanjung = Object.keys(tanjungStats).sort();
+    const labelsTanjung = Object.keys(tanjungStats).sort(); // Akan urut RW 01 - RW 10
     const dataKasusTanjung = labelsTanjung.map(rw => tanjungStats[rw].total);
     const dataPositifTanjung = labelsTanjung.map(rw => tanjungStats[rw].positif);
 
-    // Simpan ke Global Data (untuk Peta Halaman 11)
+    // Simpan ke Global Data
     labelsTanjung.forEach((rw, i) => {
         globalRWData.push({
             kelurahan: 'Tanjung Hilir',
@@ -2049,8 +2058,8 @@ globalMainData.forEach(row => {
         });
     });
 
-    renderTanjungHilirChart(labelsTanjung, dataKasusTanjung, dataPositifTanjung); // Pakai fungsi render yg sudah ada
-    generateTanjungHilirInterpretation(labelsTanjung, dataKasusTanjung, dataPositifTanjung); // Pakai fungsi narasi yg sudah ada
+    renderTanjungHilirChart(labelsTanjung, dataKasusTanjung, dataPositifTanjung); 
+    generateTanjungHilirInterpretation(labelsTanjung, dataKasusTanjung, dataPositifTanjung); 
 }
 
 // --- FUNGSI RENDER (TIDAK BERUBAH, HANYA DIPANGGIL OLEH FUNGSI DI ATAS) ---
@@ -2512,41 +2521,71 @@ function renderEmptyKLbPasti() {
     if(recentContainer) recentContainer.innerHTML = `<div class="text-slate-400 text-xs text-center">Data kosong.</div>`;
 }   
 
-// --- LOGIKA HALAMAN 9 & 10: CAKUPAN IDL ---
+// --- LOGIKA HALAMAN 9 & 10: CAKUPAN IDL (INDEPENDEN DARI TAHUN) ---
 const URL_IDL_BUGIS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=1780734819&single=true&output=csv';
 const URL_IDL_TANJUNG = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSW9ty_iQPJMjA1knnS4gZoybPljm0ijFMA1Yr9QIv7q46D6wwalyYEvYR2LQa-VM0klDOPUSGqmJu7/pub?gid=800244399&single=true&output=csv';
 
-// ================================================================
-// GANTI BAGIAN INI (HAPUS loadIDLData & fetchIDLData LAMA)
-// ================================================================
+// VARIABLE GLOBAL (CACHE) - Agar data tidak hilang/berubah saat ganti tahun
+let cachedIDLBugis = null;
+let cachedIDLTanjung = null;
 
-// Fungsi 1: Mengambil Data & Membaca CSV (Versi Return Data)
-async function loadIDLData(url, chartId, interpretationId, locationName) {
+// Fungsi Utama: Mengelola Pengambilan & Tampilan Data IDL
+async function processIDLData() {
+    // 1. Cek apakah data sudah ada di memori? Jika belum, ambil dari Google Sheets.
+    if (!cachedIDLBugis) {
+        console.log("Mengambil data IDL Bugis dari Server...");
+        cachedIDLBugis = await fetchAndParseIDL(URL_IDL_BUGIS, 'Dalam Bugis');
+    }
+    
+    if (!cachedIDLTanjung) {
+        console.log("Mengambil data IDL Tanjung dari Server...");
+        cachedIDLTanjung = await fetchAndParseIDL(URL_IDL_TANJUNG, 'Tanjung Hilir');
+    }
+
+    // 2. Render Grafik & Interpretasi (Selalu dijalankan karena Canvas di-reset saat ganti halaman/tahun)
+    // Tapi datanya menggunakan 'cachedIDL...' yang TIDAK difilter tahun.
+    
+    // Render Bugis (Halaman 9)
+    if (cachedIDLBugis && cachedIDLBugis.labels.length > 0) {
+        renderIDLChart('idlBugisChart', cachedIDLBugis.labels, cachedIDLBugis.values);
+        generateIDLInterpretation('idlBugisInterpretation', cachedIDLBugis.labels, cachedIDLBugis.values, 'Dalam Bugis');
+    }
+
+    // Render Tanjung (Halaman 10)
+    if (cachedIDLTanjung && cachedIDLTanjung.labels.length > 0) {
+        renderIDLChart('idlTanjungHilirChart', cachedIDLTanjung.labels, cachedIDLTanjung.values);
+        generateIDLInterpretation('idlTanjungHilirInterpretation', cachedIDLTanjung.labels, cachedIDLTanjung.values, 'Tanjung Hilir');
+    }
+
+    // 3. Update Total di Halaman 3
+    updateTotalPage3();
+}
+
+// Fungsi Helper: Hanya Ambil & Rapikan Data (Tanpa Filter Tahun)
+async function fetchAndParseIDL(url, locationName) {
     try {
         const response = await fetch(url);
         const csvText = await response.text();
-        
-        // Baca CSV Manual
-        const result = Papa.parse(csvText, { header: true, dynamicTyping: false, skipEmptyLines: true });
+        const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
 
         const labels = [];
         const values = [];
 
         result.data.forEach(row => {
             const keys = Object.keys(row);
-            // Cari Kolom RW & Cakupan secara fleksibel
+            // Cari kolom RW dan Cakupan (Tanpa melihat kolom Tahun)
             const rwKey = keys.find(k => k.trim().toLowerCase().includes('rw')) || keys[0];
             const valKey = keys.find(k => k.toLowerCase().includes('cakupan') || k.toLowerCase().includes('idl') || k.includes('%')) || keys[1];
 
             if (row[rwKey] && row[valKey]) {
-                // Format Label RW
+                // Format RW
                 let rwLabel = String(row[rwKey]).trim();
                 if (/^\d+$/.test(rwLabel)) rwLabel = "RW " + rwLabel.padStart(2, '0');
                 else if (!rwLabel.toLowerCase().startsWith('rw')) rwLabel = "RW " + rwLabel;
 
-                // Format Angka (Bersihkan % dan ,)
+                // Format Angka
                 let rawVal = String(row[valKey]).trim().replace('%', '').replace(',', '.');
-                const finalVal = parseFloat(rawVal);
+                let finalVal = parseFloat(rawVal);
 
                 if (!isNaN(finalVal)) {
                     labels.push(rwLabel);
@@ -2555,69 +2594,35 @@ async function loadIDLData(url, chartId, interpretationId, locationName) {
             }
         });
 
-        // Update Grafik & Narasi Per Kelurahan
-        if (labels.length > 0) {
-            renderIDLChart(chartId, labels, values);
-            generateIDLInterpretation(interpretationId, labels, values, locationName);
-            return values; // PENTING: Mengirim data balik agar bisa dihitung totalnya
-        } else {
-            console.error(`Data Kosong untuk ${locationName}`);
-            return [];
-        }
-
+        return { labels, values }; // Simpan sebagai objek
     } catch (error) {
-        console.error(`Gagal Load ${locationName}:`, error);
-        return [];
+        console.error(`Gagal ambil data ${locationName}:`, error);
+        return { labels: [], values: [] };
     }
 }
 
-// Fungsi 2: Menggabungkan Data & Update Halaman 3
-async function fetchIDLData() {
-    console.log("Memulai proses hitung total IDL...");
-    
-    // 1. Ambil data
-    const dataBugis = await loadIDLData(URL_IDL_BUGIS, 'idlBugisChart', 'idlBugisInterpretation', 'Dalam Bugis');
-    const dataTanjung = await loadIDLData(URL_IDL_TANJUNG, 'idlTanjungHilirChart', 'idlTanjungHilirInterpretation', 'Tanjung Hilir');
-    
-    // Pastikan data adalah array (jaga-jaga jika error/undefined)
-    const listBugis = Array.isArray(dataBugis) ? dataBugis : [];
-    const listTanjung = Array.isArray(dataTanjung) ? dataTanjung : [];
-
-    // 2. Gabung Data
-    const totalData = [...listBugis, ...listTanjung];
-    console.log(`Total RW didapat: ${totalData.length}`);
-
+// Fungsi Update Halaman 3 (Total Rata-rata)
+function updateTotalPage3() {
     const elPage3 = document.getElementById('totalIDLCoverage');
+    if (!elPage3) return;
 
-    // 3. Update Halaman 3
-    if (elPage3) {
-        if (totalData.length > 0) {
-            const sum = totalData.reduce((a, b) => a + b, 0);
-            const grandAverage = (sum / totalData.length).toFixed(1);
+    let allValues = [];
+    if (cachedIDLBugis) allValues = allValues.concat(cachedIDLBugis.values);
+    if (cachedIDLTanjung) allValues = allValues.concat(cachedIDLTanjung.values);
 
-            console.log(`Hasil Perhitungan: ${grandAverage}%`);
-            
-            // Tampilkan Angka
-            elPage3.innerHTML = `${grandAverage}<span class="text-base font-normal text-slate-400">%</span>`;
+    if (allValues.length > 0) {
+        const sum = allValues.reduce((a, b) => a + b, 0);
+        const avg = (sum / allValues.length).toFixed(1);
 
-            // Atur Warna
-            elPage3.classList.remove('text-slate-800', 'text-rose-600', 'text-emerald-600');
-            if (parseFloat(grandAverage) < 95) {
-                elPage3.classList.add('text-rose-600');
-            } else {
-                elPage3.classList.add('text-emerald-600');
-            }
-        } else {
-            // Jika data benar-benar kosong/gagal fetch
-            elPage3.innerText = "N/A";
-            elPage3.classList.add('text-slate-400');
-            console.error("Gagal menghitung: Data kosong.");
-        }
+        elPage3.innerHTML = `${avg}<span class="text-base font-normal text-slate-400">%</span>`;
+        
+        elPage3.classList.remove('text-slate-800', 'text-rose-600', 'text-emerald-600');
+        if (parseFloat(avg) < 95) elPage3.classList.add('text-rose-600');
+        else elPage3.classList.add('text-emerald-600');
     } else {
-        console.error("Elemen ID 'totalIDLCoverage' tidak ditemukan di HTML Halaman 3!");
+        elPage3.innerText = "-";
     }
 }
-// ================================================================
 
 function renderIDLChart(canvasId, labels, data) {
     const ctx = document.getElementById(canvasId);
@@ -2744,28 +2749,26 @@ function generateIDLInterpretation(elemId, labels, values, locName) {
 
 
 async function init() {
-    createPages(); // Generate halaman 3-10
+    createPages(); 
     
-    // 1. AMBIL DATA UTAMA (SINGLE SOURCE)
+    // 1. Data Kasus (Terpengaruh Filter Tahun)
     await fetchDataFromGoogleSheets(); 
 
-    // 2. JALANKAN PROSES VISUALISASI BERDASARKAN DATA UTAMA
-    // Semua fungsi di bawah ini sekarang menggunakan 'globalMainData'
-    createChart();                // Halaman 1 & 2 (Tren Mingguan)
-    initPage3Charts();            // Halaman 3 (Gender & Usia)
-    processRWData();              // Halaman 4 & 5 (Wilayah) + Siapkan Data Peta
-    processLabDataFromGlobal();   // Halaman 6 (Status Lab)
+    // 2. Visualisasi Data Kasus
+    createChart();                
+    initPage3Charts();            
+    processRWData();              
+    processLabDataFromGlobal();   
+    processKLBKlinisFromGlobal(); 
+    processKLbPastiFromGlobal();  
+    fetchDiseaseData();          
     
-    processKLBKlinisFromGlobal(); // Halaman 7 (KLB Klinis - Logic Baru)
-    processKLbPastiFromGlobal();  // Halaman 8 (KLB Pasti - Logic Baru)
-
-    // Data Tambahan (Masih fetch terpisah karena format beda - PWS Mingguan)
-    fetchDiseaseData();         
+    // 3. DATA IMUNISASI (BARU: INDEPENDEN FILTER)
+    // Fungsi ini akan cek: kalau data sudah ada di cache, pakai cache.
+    // Kalau belum, baru download. Jadi tidak peduli tahun berapa yang dipilih.
+    await processIDLData(); 
     
-    // 3. AMBIL DATA IMUNISASI (Link Terpisah sesuai request)
-    await fetchIDLData();
-    
-    // 4. UPDATE PETA 
+    // 4. Update Peta 
     updateMapOverlay();
 }
 
@@ -2880,48 +2883,83 @@ globalMainData.forEach(row => {
     } catch (e) { console.error("Error processing Gender Chart:", e); }
 }
 
-// 2. CHART USIA (BAR) - DARI GLOBAL DATA
+// 2. CHART USIA (BAR) - FIXED ORDER & ZERO VALUES
 function processAgeFromGlobal() {
     try {
-        const ageGroups = {};
-        
-        // Loop data global
-globalMainData.forEach(row => {
-    const keys = Object.keys(row);
-    const colTahun = keys.find(k => k.trim().toLowerCase().includes('tahun')) || 'Tahun';
+        // 1. Tentukan Kategori URUT dan Label yang diinginkan
+        const orderedCategories = [
+            "< 1",
+            "1-4",
+            "5-9",
+            "10-14",
+            "≥ 15" // User request: "diatas 15 tahun", kita pakai simbol > biar rapi di chart, atau sesuaikan teksnya
+        ];
 
-    // --- FILTER TAHUN ---
-    if (row[colTahun] != currentYear) return;
+        // 2. Inisialisasi Nilai Awal 0 untuk semua kategori
+        const ageCounts = {};
+        orderedCategories.forEach(cat => {
+            ageCounts[cat] = 0;
+        });
+
+        // 3. Loop Data Global
+        globalMainData.forEach(row => {
+            const keys = Object.keys(row);
+            const colTahun = keys.find(k => k.trim().toLowerCase().includes('tahun')) || 'Tahun';
+
+            // --- FILTER TAHUN ---
+            if (row[colTahun] != currentYear) return;
             
             // Cari Kolom
             const colUsia = keys.find(k => k.trim().toLowerCase().includes('rentang_usia')) || 'Rentang_Usia';
             const colEpid = keys.find(k => k.trim().toLowerCase().includes('nomor_epid')) || 'Nomor_Epid';
             
-            // Filter: Harus ada Rentang Usia & Nomor Epid
+            // Filter Validasi
             if (row[colEpid] && row[colUsia]) {
-                const usiaLabel = String(row[colUsia]).trim();
+                const rawUsia = String(row[colUsia]).trim().toLowerCase();
                 
-                // Hitung frekuensi
-                if (!ageGroups[usiaLabel]) {
-                    ageGroups[usiaLabel] = 0;
+                // 4. Mapping/Normalisasi Data Mentah ke Kategori yang Kita Buat
+                // Ini penting biar kalau di Excel tulisannya "1-4 th", tetap masuk ke "1-4 Tahun"
+                let targetCategory = null;
+
+                if (rawUsia.includes('<') || rawUsia.includes('bayi') || rawUsia === '0') {
+                    targetCategory = "< 1";
+                } 
+                else if (rawUsia.includes('1-4') || rawUsia.includes('1 - 4') || rawUsia.includes('balita')) {
+                    targetCategory = "1-4";
                 }
-                ageGroups[usiaLabel]++;
+                else if (rawUsia.includes('5-9') || rawUsia.includes('5 - 9')) {
+                    targetCategory = "5-9";
+                }
+                else if (rawUsia.includes('10-14') || rawUsia.includes('10 - 14')) {
+                    targetCategory = "10-14";
+                }
+                else if (rawUsia.includes('15') || rawUsia.includes('>') || rawUsia.includes('dewasa')) {
+                    targetCategory = "≥ 15";
+                }
+
+                // Jika cocok dengan salah satu kategori, tambahkan hitungan
+                if (targetCategory) {
+                    ageCounts[targetCategory]++;
+                }
             }
         });
 
-        // Convert ke Array untuk Chartjs
-        // Kita urutkan key-nya agar rapi (misal string sort atau logic khusus)
-        const labels = Object.keys(ageGroups).sort(); 
-        const values = labels.map(label => ageGroups[label]);
+        // 5. Siapkan Data untuk Chart (Sesuai Urutan orderedCategories)
+        const chartLabels = orderedCategories;
+        const chartValues = orderedCategories.map(cat => ageCounts[cat]);
 
-        // Cari Max untuk Analisis
-        const maxVal = Math.max(...values);
-        const maxIndex = values.indexOf(maxVal);
-        const maxLabel = labels[maxIndex] || '-';
+        // Cari Max untuk Analisis Teks
+        const maxVal = Math.max(...chartValues);
+        const maxIndex = chartValues.indexOf(maxVal);
+        const maxLabel = chartLabels[maxIndex];
 
-        // Render Chart Usia
+        // 6. Render Chart Usia
         const ctx = document.getElementById('ageChart');
         if (ctx) {
+            // Hancurkan chart lama jika ada biar gak numpuk/glitch
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) existingChart.destroy();
+
             const ctx2d = ctx.getContext('2d');
             const gradient = ctx2d.createLinearGradient(0, 0, 0, 200);
             gradient.addColorStop(0, '#8b5cf6'); // Violet
@@ -2930,10 +2968,10 @@ globalMainData.forEach(row => {
             new Chart(ctx2d, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: chartLabels, // Label sudah urut
                     datasets: [{
                         label: 'Kasus',
-                        data: values,
+                        data: chartValues, // Data sudah urut dan ada angka 0-nya
                         backgroundColor: gradient,
                         borderRadius: 6,
                         barThickness: 'flex',
@@ -2950,7 +2988,8 @@ globalMainData.forEach(row => {
                             anchor: 'end',
                             align: 'top',
                             offset: -2,
-                            font: { size: 9, weight: 'bold' }
+                            font: { size: 9, weight: 'bold' },
+                            formatter: (value) => value > 0 ? value : '' // Sembunyikan label kalau 0 biar bersih
                         }
                     },
                     scales: {
@@ -2965,14 +3004,21 @@ globalMainData.forEach(row => {
             });
         }
 
-        // Update Teks Interpretasi Usia
+        // 7. Update Teks Interpretasi Usia (Otomatis)
         const analysisEl = document.getElementById('ageAnalysis');
         if (analysisEl) {
-            analysisEl.innerHTML = `
-                Kelompok rentang usia <strong class="text-violet-600">${maxLabel}</strong> mencatat insidensi tertinggi 
-                dengan <strong>${maxVal} kasus</strong>. Data ini dihitung berdasarkan kolom 'Rentang_Usia' dari total data masuk. 
-                Program skrining perlu diprioritaskan pada segmen usia ini.
-            `;
+            if (maxVal === 0) {
+                 analysisEl.innerHTML = `
+                    Belum ada data kasus yang tercatat untuk tahun ${currentYear}. 
+                    Grafik menunjukkan distribusi kosong pada seluruh rentang usia.
+                `;
+            } else {
+                analysisEl.innerHTML = `
+                    Kelompok rentang usia <strong class="text-violet-600">${maxLabel}</strong> mencatat insidensi tertinggi 
+                    dengan <strong>${maxVal} kasus</strong>. Data ini dihitung berdasarkan kolom 'Rentang_Usia' dari total data masuk. 
+                    Program skrining perlu diprioritaskan pada segmen usia ini.
+                `;
+            }
         }
 
     } catch (e) { console.error("Error processing Age Chart:", e); }
