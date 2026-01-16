@@ -284,33 +284,12 @@
     
     <div class="relative z-10 flex justify-between items-start">
         <div class="space-y-1">
-            
-            <div class="relative inline-block text-left z-50 mb-2">
-                <button onclick="toggleYearMenu()" id="btnYearFilter" class="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer group outline-none">
-                    <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    
-                    <span class="text-xs font-bold tracking-widest" id="labelYearFilter">
-                        2026
-                    </span>
-                    
-                    <svg class="w-3 h-3 transition-transform duration-200 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <div id="yearDropdown" class="hidden absolute left-0 mt-2 w-24 origin-top-left bg-white/95 backdrop-blur-xl rounded-xl shadow-xl border border-indigo-100 ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden transform transition-all z-50">
-                    <div class="py-1">
-                        <a href="javascript:void(0)" onclick="selectYear(2025)" class="block px-4 py-2 text-xs font-bold text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-center">
-                            2025
-                        </a>
-                        <a href="javascript:void(0)" onclick="selectYear(2026)" class="block px-4 py-2 text-xs font-bold text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-center">
-                            2026
-                        </a>
-                        <a href="javascript:void(0)" onclick="selectYear(2027)" class="block px-4 py-2 text-xs font-bold text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-center">
-                            2027
-                        </a>
-                    </div>
-                </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-600 mb-2 shadow-sm">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+                </span>
+                <span class="text-[10px] font-bold tracking-widest uppercase">LIVE DATA</span>
             </div>
 
             <h1 class="text-6xl font-extrabold text-slate-900 tracking-tighter leading-none">
@@ -490,25 +469,61 @@
         <main class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
             
 <div class="title-clean-header">
-    <div class="space-y-1">
-        <div class="flex items-center gap-2 mb-2">
-            <div class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+    
+    <div class="flex flex-col gap-4"> <div class="relative inline-block text-left z-50 self-start">
+<button onclick="toggleYearMenu()" id="btnYearFilter" class="group relative flex items-center gap-3 pl-4 pr-2 py-2 
+    bg-gradient-to-br from-white/80 via-white/40 to-white/20 
+    backdrop-blur-2xl 
+    border-t border-l border-white/90 
+    border-b border-r border-white/20
+    rounded-2xl 
+    shadow-[0_15px_35px_-5px_rgba(99,102,241,0.15),inset_0_-2px_4px_rgba(0,0,0,0.05)]
+    hover:scale-[1.02] hover:shadow-[0_20px_40px_-5px_rgba(99,102,241,0.4)]
+    transition-all duration-500 ease-out outline-none overflow-hidden">
+    
+    <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+
+    <span class="relative text-[9px] font-extrabold text-slate-600 uppercase tracking-widest drop-shadow-sm z-10">
+        PERIODE
+    </span>
+
+    <div class="relative h-3 w-px bg-slate-500/20 group-hover:bg-indigo-500/30 transition-colors z-10"></div>
+
+    <span id="labelYearFilter" class="relative text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-violet-700 font-sans tracking-tight z-10">
+        2026
+    </span>
+
+    <div class="relative w-8 h-8 rounded-xl bg-gradient-to-br from-white to-indigo-50 shadow-[inset_0_2px_4px_rgba(255,255,255,1),0_4px_10px_rgba(99,102,241,0.2)] flex items-center justify-center text-indigo-600 border border-white/80 z-10 group-hover:text-indigo-800 transition-transform duration-300 group-hover:rotate-90">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+    </div>
+</button>
+
+            <div id="yearDropdown" class="hidden absolute left-0 mt-2 w-32 origin-top-left bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 ring-1 ring-black/5 focus:outline-none overflow-hidden z-[100] transform transition-all animate-in fade-in slide-in-from-top-2">
+                <div class="p-1.5 space-y-1">
+                    <a href="javascript:void(0)" onclick="selectYear(2025)" class="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                        2025
+                    </a>
+                    <a href="javascript:void(0)" onclick="selectYear(2026)" class="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                        2026
+                    </a>
+                    <a href="javascript:void(0)" onclick="selectYear(2027)" class="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                        2027
+                    </a>
+                </div>
             </div>
-            <span class="text-[10px] font-bold text-indigo-600 tracking-[0.2em] uppercase">Epidemiologi</span>
         </div>
-        
-        <h3 class="text-3xl font-bold text-slate-800 tracking-tight">
-            Tren Mingguan Campak
-        </h3>
-        
-        <p class="text-slate-500 text-sm font-medium leading-relaxed">
-            Visualisasi data & pergerakan kasus mingguan
-        </p>
+
+        <div>
+            <h3 class="text-3xl font-bold text-slate-800 tracking-tight leading-none mb-1">
+                Tren Mingguan Campak
+            </h3>
+            <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                Visualisasi data & pergerakan kasus mingguan
+            </p>
+        </div>
     </div>
 
-    <div class="text-right">
+    <div class="text-right self-end">
         <div class="flex flex-col items-end">
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
                 Total Kumulatif
@@ -528,7 +543,9 @@
             </div>
         </div>
     </div>
+    
 </div>
+
             <div id="debugInfo" class="debug-info hidden">
                 <div class="flex justify-between items-center mb-2">
                     <strong class="text-red-600">Debug Information:</strong>
@@ -1856,99 +1873,137 @@ function updateAnalysis() {
             }
         }
 
-        function processDiseaseData(data) {
-            // Asumsi struktur CSV: Kolom "Penyakit" dan kolom-kolom Minggu (misal "M1", "M2", "M3", "M4" atau sejenisnya)
-            // Kita akan mencari kolom yang berisi angka untuk dijumlahkan
-            
-            let processedData = data.map(row => {
-                // Ambil nama penyakit (cari key yang mengandung 'penyakit' atau 'name' atau ambil key pertama)
-                const keys = Object.keys(row);
-                const nameKey = keys.find(k => k.toLowerCase().includes('penyakit')) || keys[0];
-                const diseaseName = row[nameKey];
+function processDiseaseData(data) {
+    // 1. Proses Data Mentah
+    let processedData = data.map(row => {
+        const keys = Object.keys(row);
+        // Cari kolom nama penyakit & abaikan kolom nomor
+        const nameKey = keys.find(k => k.toLowerCase().includes('penyakit') || k.toLowerCase().includes('name')) || keys[0];
+        const diseaseName = row[nameKey];
 
-                // Hitung total dari kolom yang berupa angka (mengabaikan kolom No/Kode)
-                let total = 0;
-                let weeklyValues = [];
-                
-                keys.forEach(key => {
-                    if (typeof row[key] === 'number' && key !== nameKey && !key.toLowerCase().includes('no')) {
-                        total += row[key];
-                        weeklyValues.push(row[key]);
-                    }
-                });
+        // Hitung total & ambil history mingguan untuk tren
+        let total = 0;
+        let weeklyValues = [];
+        
+        keys.forEach(key => {
+            // Ambil hanya kolom yang berisi angka, bukan nama penyakit/nomor
+            if (typeof row[key] === 'number' && key !== nameKey && !key.toLowerCase().includes('no')) {
+                total += row[key];
+                weeklyValues.push(row[key]);
+            }
+        });
 
-                // Tentukan trend (naik/turun dibanding minggu lalu)
-                // Mengambil 2 nilai terakhir
-                let trend = 'flat';
-                if (weeklyValues.length >= 2) {
-                    const last = weeklyValues[weeklyValues.length - 1];
-                    const prev = weeklyValues[weeklyValues.length - 2];
-                    if (last > prev) trend = 'up';
-                    else if (last < prev) trend = 'down';
-                }
+        // Tentukan tren (bandingkan 2 minggu terakhir)
+        let trend = 'flat';
+        if (weeklyValues.length >= 2) {
+            const last = weeklyValues[weeklyValues.length - 1];
+            const prev = weeklyValues[weeklyValues.length - 2];
+            if (last > prev) trend = 'up';
+            else if (last < prev) trend = 'down';
+        }
 
-                return { name: diseaseName, total: total, trend: trend, lastVal: weeklyValues[weeklyValues.length-1] || 0 };
-            });
+        return { name: diseaseName, total: total, trend: trend, lastVal: weeklyValues[weeklyValues.length-1] || 0 };
+    });
 
-            // Urutkan berdasarkan total kasus terbanyak
-            processedData.sort((a, b) => b.total - a.total);
-            
-            // Ambil Top 5
-            const top5 = processedData.slice(0, 5);
-            
-            // Render Table
-            const tbody = document.getElementById('diseaseTableBody');
-            tbody.innerHTML = '';
-            
-            top5.forEach(item => {
-                let trendIcon = '<span class="text-slate-400">-</span>';
-                if (item.trend === 'up') trendIcon = '<span class="text-rose-500 text-[10px]">▲</span>';
-                if (item.trend === 'down') trendIcon = '<span class="text-emerald-500 text-[10px]">▼</span>';
+    // 2. Urutkan Ranking (Terbanyak ke Terikit)
+    processedData.sort((a, b) => b.total - a.total);
+    
+    // 3. Ambil Top 5
+    const top5 = processedData.slice(0, 5);
+    
+    // 4. Render Tabel (HTML Table)
+    const tbody = document.getElementById('diseaseTableBody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        top5.forEach(item => {
+            let trendIcon = '<span class="text-slate-400 font-bold">-</span>';
+            if (item.trend === 'up') trendIcon = '<span class="text-rose-500 font-bold text-[10px]">▲</span>';
+            if (item.trend === 'down') trendIcon = '<span class="text-emerald-500 font-bold text-[10px]">▼</span>';
 
-                const row = `
-                    <tr>
-                        <td>
-                            <div class="flex items-center">
-                                <span class="status-dot ${item.total > 0 ? 'bg-indigo-400' : 'bg-slate-300'}"></span>
-                                ${item.name}
-                            </div>
-                        </td>
-                        <td class="text-right font-bold text-slate-700">${item.total}</td>
-                        <td class="text-center">${trendIcon}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
+            const row = `
+                <tr>
+                    <td>
+                        <div class="flex items-center">
+                            <span class="status-dot ${item.total > 0 ? 'bg-indigo-500' : 'bg-slate-300'}"></span>
+                            <span class="font-medium text-slate-700">${item.name}</span>
+                        </div>
+                    </td>
+                    <td class="text-right font-bold text-slate-800">${item.total}</td>
+                    <td class="text-center">${trendIcon}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
 
-            // Update Interpretasi
-            const topDisease = top5[0];
-            const totalAll = processedData.reduce((acc, curr) => acc + curr.total, 0);
-            
-            document.getElementById('totalCases4Weeks').textContent = totalAll;
-            
-            const interpretationText = document.getElementById('diseaseInterpretation');
-            if (topDisease) {
-                interpretationText.innerHTML = `
-                    <p class="text-sm text-slate-700 font-medium">
-                        Dominasi Kasus: <span class="text-indigo-700 font-bold">${topDisease.name}</span>
-                    </p>
-                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                        Berdasarkan data Sistem Kewaspadaan Dini dan Respon (SKDR), Penyakit ini mencatat jumlah tertinggi dalam 4 minggu terakhir diantara 5 penyakit dengan jumlah temuan tertingi yaitu dengan jumlah total 
-                        <strong class="text-slate-700">${topDisease.total} kasus</strong> dengan 
-                        ${topDisease.trend === 'up' 
-                            ? '<span class="text-rose-600 bg-rose-50 px-1 rounded">Tren meningkat</span> pada minggu terakhir, perlu kewaspadaan dini.' 
-                            : '<span class="text-emerald-600 bg-emerald-50 px-1 rounded">Tren menurun</span> jika dibandingkan minggu sebelumnya.'}
-                    </p>
-                `;
-                
-                // Update status alert jika kasus tinggi
-                const alertEl = document.getElementById('alertStatus');
-                if (topDisease.trend === 'up' && topDisease.lastVal > 5) {
-                     alertEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Waspada Kenaikan';
-                     alertEl.className = "text-xs font-bold text-rose-600 flex items-center gap-1 mt-0.5";
-                }
+    // 5. Update Total Statistik di Dashboard
+    const totalAll = processedData.reduce((acc, curr) => acc + curr.total, 0);
+    const elTotalCases = document.getElementById('totalCases4Weeks');
+    if(elTotalCases) elTotalCases.textContent = totalAll.toLocaleString('id-ID');
+
+    // ============================================================
+    // PERBAIKAN: LOGIKA NARASI CERDAS & DINAMIS
+    // ============================================================
+    const interpretationText = document.getElementById('diseaseInterpretation');
+    
+    if (top5.length > 0 && interpretationText) {
+        const top1 = top5[0];
+        
+        // Hitung Total Kasus Top 5 saja (untuk melihat dominasi)
+        const totalTop5 = top5.reduce((acc, curr) => acc + curr.total, 0);
+        
+        // Hitung Persentase Dominasi Penyakit #1 terhadap total Top 5
+        const dominancePct = totalTop5 > 0 ? ((top1.total / totalTop5) * 100).toFixed(0) : 0;
+
+        // Tentukan Wording Tren Penyakit #1
+        let trendWording = "";
+        if (top1.trend === 'up') {
+            trendWording = `<span class="text-rose-600 bg-rose-50 px-1 rounded font-bold">tren meningkat</span>`;
+        } else if (top1.trend === 'down') {
+            trendWording = `<span class="text-emerald-600 bg-emerald-50 px-1 rounded font-bold">tren menurun</span>`;
+        } else {
+            trendWording = `<span class="text-slate-500 bg-slate-100 px-1 rounded font-bold">tren stabil</span>`;
+        }
+
+        // Cek Penyakit Lain di Top 5 (Urutan 2-5) yang trennya NAIK
+        const otherRising = top5.slice(1).filter(d => d.trend === 'up');
+        let secondaryWording = "";
+
+        if (otherRising.length > 0) {
+            // Jika ada penyakit lain yang naik
+            const diseaseNames = otherRising.map(d => d.name).slice(0, 2).join(" & "); // Ambil max 2 nama
+            secondaryWording = `Namun, kewaspadaan dini perlu ditingkatkan pada <strong>${diseaseNames}</strong> yang juga menunjukkan pergerakan grafik naik.`;
+        } else {
+            // Jika penyakit lain aman (turun/stabil)
+            secondaryWording = `Sementara itu, 4 penyakit penyerta lainnya dalam daftar 5 besar menunjukkan pola yang relatif terkendali.`;
+        }
+
+        // --- RAKIT KALIMAT NARASI ---
+        interpretationText.innerHTML = `
+            <p class="text-sm text-slate-700 font-medium mb-1">
+                Dominasi Kasus: <span class="text-indigo-700 font-bold">${top1.name}</span>
+            </p>
+            <p class="text-xs text-slate-500 leading-relaxed text-justify">
+                Dalam periode 4 minggu terakhir, <strong>${top1.name}</strong> menjadi kontributor utama morbiditas dengan 
+                <strong class="text-slate-800">${top1.total} kasus</strong> (${trendWording}), mencakup 
+                <strong>${dominancePct}%</strong> dari total akumulasi 5 penyakit terbanyak. 
+                ${secondaryWording}
+            </p>
+        `;
+        
+        // Update Alert Status (Kecil di sebelah kanan)
+        const alertEl = document.getElementById('alertStatus');
+        if(alertEl) {
+            if (top1.trend === 'up' && top1.lastVal > 5) {
+                 alertEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Waspada Kenaikan';
+                 alertEl.className = "text-[20px] font-bold text-rose-600 flex items-center gap-2 mt-0.5";
+            } else {
+                 alertEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> Tetap Siaga';
+                 alertEl.className = "text-[20px] font-bold text-rose-600 flex items-center gap-2 mt-0.5";
             }
         }
+    }
+}
 
 // --- LOGIKA BARU HALAMAN 4 & 5: DATA RW DARI SUMBER UTAMA ---
 
