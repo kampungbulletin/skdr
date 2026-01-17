@@ -731,6 +731,41 @@ path.leaflet-interactive:focus {
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+/* --- TOMBOL FULLSCREEN ESTETIK --- */
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 25px; /* Sejajar dengan dock kiri */
+            right: 20px;  /* Pojok kanan */
+            width: 48px; 
+            height: 48px;
+            background: rgba(255, 255, 255, 0.85); /* Putih kaca */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px; /* Radius sama dengan dock */
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); /* Shadow lembut */
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Efek membal (bouncy) */
+            z-index: 1000; /* Pastikan di atas peta */
+            color: var(--text-dark);
+            font-size: 18px;
+        }
+
+        .fullscreen-btn:hover {
+            transform: translateY(-4px) scale(1.05); /* Naik sedikit saat hover */
+            background: white;
+            color: var(--primary); /* Berubah biru */
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25); /* Glow biru */
+            border-color: var(--primary);
+        }
+
+        .fullscreen-btn:active {
+            transform: scale(0.95); /* Efek tekan */
+        }
+
 /* Tombol Pemicu (Trigger Buttons) */
 .dock-trigger-group {
     display: flex;
@@ -814,6 +849,41 @@ path.leaflet-interactive:focus {
 }
 .btn-close-drawer:hover { background: #e2e8f0; color: var(--danger); }
 
+/* --- CSS TOMBOL GESER (Baru) --- */
+.drawer-nav-group {
+    display: flex;
+    gap: 8px; /* Jarak antar tombol */
+    margin-top: 8px; /* Jarak dari tombol Tutup */
+    width: 100%;
+}
+
+.nav-btn {
+    flex: 1; /* Agar lebar kiri & kanan sama */
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 6px 0;
+    cursor: pointer;
+    color: var(--text-light);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.nav-btn:hover {
+    background: #f8fafc;
+    color: var(--primary); /* Biru saat hover */
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.nav-btn:active {
+    transform: scale(0.95);
+}
+
 /* Scrollable Cards Container */
 .cards-scroller {
     display: flex;
@@ -881,9 +951,9 @@ path.leaflet-interactive:focus {
         <div class="section-header" onclick="toggleSection('filterBody', 'btnFilter')"> 
             <div class="header-left-group">
                 <div class="section-icon-box"><i class="fas fa-filter"></i></div>
-                <div style="display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap: 4px;">
                     <span class="section-title">Filter Data</span>
-                    <span id="labelTahun" style="font-size:10px; color:#2563eb; font-weight:700;">(2026)</span>
+                    <span id="labelTahun" style="font-size:13px; color:#2563eb; font-weight:800;">(2026)</span>
                 </div>
             </div>
             <button class="toggle-btn rotated" id="btnFilter">
@@ -1005,21 +1075,34 @@ path.leaflet-interactive:focus {
             <i class="fas fa-building"></i> Tanjung Hilir
         </button>
     </div>
-
 </div>
+
+<button class="fullscreen-btn" onclick="toggleFullscreen()" title="Mode Layar Penuh">
+        <i class="fas fa-expand" id="iconFullscreen"></i>
+    </button>
 
 <div class="dock-drawer" id="bottomDrawer">
     <div class="drawer-header">
         <div class="drawer-subtitle">Rekapitulasi</div>
         <div class="drawer-title" id="drawerTitle">Nama Kelurahan</div>
+        
         <button class="btn-close-drawer" onclick="closeDrawer()">
             <i class="fas fa-times"></i> Tutup
         </button>
-    </div>
+
+        <div class="drawer-nav-group">
+            <button class="nav-btn" onclick="scrollDrawer('left')" title="Geser Kiri">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="nav-btn" onclick="scrollDrawer('right')" title="Geser Kanan">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        </div>
 
     <div class="cards-scroller" id="drawerContent">
         </div>
-</div>   
+</div>
    
     <div class="loader-overlay" id="loader">
         <div class="spinner"></div>
@@ -1160,7 +1243,8 @@ var latestDataStats = {}; // Variabel baru untuk menyimpan data live
             // 1. Update Tampilan Tombol
             document.querySelectorAll('.year-btn').forEach(btn => {
                 btn.classList.remove('active');
-                if(btn.innerText == year) btn.classList.add('active');
+                // Kita gunakan trim() untuk buang spasi, dan toString() biar formatnya cocok
+                if(btn.textContent.trim() == year.toString()) btn.classList.add('active');
             });
 
             // 2. Update Label di Judul (Fitur Baru)
@@ -1661,6 +1745,51 @@ var latestDataStats = {}; // Variabel baru untuk menyimpan data live
             }
         });
     }
+    
+    // --- FUNGSI SCROLL DRAWER ---
+    function scrollDrawer(direction) {
+        var container = document.getElementById('drawerContent');
+        var scrollAmount = 200; // Jarak geser (pixel)
+        
+        if (direction === 'left') {
+            container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        } else {
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    }
+    
+// --- LOGIKA FULLSCREEN ---
+        function toggleFullscreen() {
+            var elem = document.documentElement; // Fokus ke seluruh halaman HTML
+            var icon = document.getElementById('iconFullscreen');
+
+            if (!document.fullscreenElement) {
+                // Masuk Fullscreen
+                if (elem.requestFullscreen) { elem.requestFullscreen(); }
+                else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } /* Safari */
+                
+                // Ubah Icon jadi Compress (Kecilkan)
+                icon.classList.remove('fa-expand');
+                icon.classList.add('fa-compress');
+            } else {
+                // Keluar Fullscreen
+                if (document.exitFullscreen) { document.exitFullscreen(); }
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); } /* Safari */
+                
+                // Ubah Icon jadi Expand (Besarkan)
+                icon.classList.remove('fa-compress');
+                icon.classList.add('fa-expand');
+            }
+        }
+
+        // Listener untuk mendeteksi jika user tekan tombol ESC
+        document.addEventListener('fullscreenchange', (event) => {
+             var icon = document.getElementById('iconFullscreen');
+             if (!document.fullscreenElement) {
+                icon.classList.remove('fa-compress');
+                icon.classList.add('fa-expand');
+             }
+        });    
 
     </script>
 </body>
