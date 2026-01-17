@@ -212,58 +212,6 @@ section-body {
     cursor: pointer;      /* Agar user tau ini bisa diklik */
 }
 
-        .section-title {
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-light);
-        }
-
-/* Legend Compact */
-.legend-box {
-    background: transparent; /* Hapus background putih agar menyatu */
-    padding: 0;
-    border: none;
-}
-
-.legend-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 6px; /* Jarak antar item legenda dirapatkan (dari 10px ke 6px) */
-}
-
-/* Icon Legenda diperkecil sedikit */
-.legend-row i { font-size: 12px; } 
-.legend-desc { font-size: 12px; font-weight: 500; color: var(--text-dark); }
-
-/* Bar Gradien Compact */
-.gradient-legend {
-    margin: 12px 0; /* Jarak gradien bar dirapatkan */
-}
-
-.gradient-bar {
-    width: 100%;
-    height: 24px;
-    background: #f1f5f9;
-    border-radius: 12px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid rgba(0,0,0,0.1);
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.gradient-fill {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        #ffcccc 0%, 
-        #ff9999 25%, 
-        #ff6666 50%, 
-        #ff3333 75%, 
-        #990000 100%);
-    border-radius: 12px;
-}
 
 .gradient-labels {
     display: flex;
@@ -271,38 +219,9 @@ section-body {
     margin-top: 8px;
     font-size: 11px;
     color: var(--text-light);
-    font-weight: 600;
+    font-weight: 100;
 }
         
-        .legend-dot {
-            width: 16px; height: 16px;
-            border-radius: 6px;
-            margin-right: 12px;
-        }
-        
-        .legend-desc { font-size: 13px; font-weight: 500; color: var(--text-dark); }
-
-        /* Loader */
-        .loader-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(8px);
-            z-index: 999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .spinner {
-            width: 50px; height: 50px;
-            border: 4px solid rgba(37, 99, 235, 0.1);
-            border-left-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 16px;
-        }
         
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
@@ -488,6 +407,113 @@ path.leaflet-interactive:focus {
     transform: translate(-50%, -50%) scale(1); /* Kembali ke ukuran normal */
 }
 
+
+
+/* === MULAI UPDATE DESIGN DARI KODE 1 (FILTER & LEGENDA) === */
+
+        /* 1. Sidebar Container & Glass Panel Update */
+        .sidebar-container {
+            width: 270px !important; /* Kembalikan ke lebar kode 1 */
+            border-radius: 24px !important;
+            top: 20px !important; left: 20px !important;
+            background: rgba(255, 255, 255, 0.75) !important;
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
+        }
+        
+        .sidebar-content { padding: 20px !important; }
+
+        /* 2. Section Header Modern (Icon Box Style) */
+        .section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-bottom: 5px; cursor: pointer; user-select: none;
+            margin-bottom: 0 !important;
+        }
+        .header-left-group { display: flex; align-items: center; gap: 10px; }
+        
+        .section-icon-box {
+            width: 28px; height: 28px;
+            background: white; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: #2563eb; font-size: 12px;
+        }
+        .section-title { font-size: 13px !important; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; text-transform: uppercase;}
+
+        .toggle-btn {
+            background: rgba(255,255,255,0.5); border: none; width: 24px; height: 24px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #64748b; font-size: 12px; cursor: pointer;
+            transition: transform 0.3s ease, background 0.2s;
+            margin-left: 0 !important; /* Reset margin lama */
+        }
+        .toggle-btn:hover { background: white; color: #2563eb; }
+        .toggle-btn.rotated { transform: rotate(180deg); }
+
+        .section-body { margin-top: 15px; padding-top: 0 !important; }
+        .section-body.collapsed { margin-top: 0; }
+
+        /* 3. Filter Components (Year Selector & Inputs) */
+        .filter-group { margin-bottom: 16px; }
+        .year-selector {
+            display: flex; background: rgba(255, 255, 255, 0.5);
+            padding: 4px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.4);
+            gap: 0 !important; /* Reset gap lama */
+        }
+        .year-btn {
+            padding: 6px 0 !important; font-size: 12px !important; border-radius: 10px !important;
+        }
+        .year-btn.active { font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transform: scale(1.02); }
+
+        .week-range { 
+            display: flex; align-items: center; gap: 8px; background: white; 
+            padding: 4px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); 
+        }
+        .input-glass {
+            background: transparent !important; border: none !important; padding: 6px;
+            font-size: 13px !important; font-weight: 700; color: #0f172a;
+        }
+
+        /* 4. Switch Toggle */
+        .toggle-row {
+            display: flex; align-items: center; justify-content: space-between; padding: 10px;
+            background: rgba(255,255,255,0.5); border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.4);
+            margin-top: 0 !important;
+        }
+        .switch { width: 36px !important; height: 20px !important; } 
+        .slider { border-radius: 30px !important; background-color: #cbd5e1; }
+        .slider:before { height: 16px !important; width: 16px !important; left: 2px !important; bottom: 2px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input:checked + .slider { background-color: #2563eb !important; }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        /* 5. Divider & Legend */
+        .glass-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.05), transparent); margin: 15px 0; }
+        
+        .gradient-container { padding: 4px; background: white; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-top: 5px; }
+        .gradient-bar {
+            width: 100%; height: 10px !important; border-radius: 4px !important;
+            background: linear-gradient(90deg, #10b981 0%, #ffcccc 20%, #ff9999 40%, #ff6666 60%, #ff3333 80%, #990000 100%) !important;
+        }
+        .gradient-fill { display: none; } /* Sembunyikan style lama */
+        
+        .legend-box { padding: 0; }
+        .legend-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+        .legend-icon { width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+        
+        /* Warna Icon Legenda */
+        .icon-safe { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .icon-border { border: 1.5px dashed #64748b; background: transparent; }
+        .icon-edu { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .icon-health { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .icon-culture { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .legend-text { font-size: 11px; font-weight: 600; color: #0f172a; }
+
+        /* Sembunyikan element lama jika masih ada */
+        .legend-row { display: none !important; } 
+        .gradient-legend { display: none !important; }
+        /* === SELESAI UPDATE DESIGN === */
+
 /* --- STYLE SIDEBAR KANAN (TOP 3) - PROFESSIONAL HEALTH THEME --- */
 .top-rw-container {
     position: absolute;
@@ -657,6 +683,42 @@ path.leaflet-interactive:focus {
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
+/* === PERBAIKAN ANIMASI BUKA TUTUP (TRANSISI) === */
+        
+        .section-body {
+            /* Pastikan transisi aktif untuk semua properti yang berubah */
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            
+            /* Kondisi saat TERBUKA */
+            max-height: 1000px !important; /* Beri nilai cukup besar agar konten muat */
+            opacity: 1 !important;
+            margin-top: 15px !important;
+            transform: translateY(0) !important;
+            overflow: hidden !important;
+            visibility: visible !important;
+        }
+
+        .section-body.collapsed {
+            /* Kondisi saat TERTUTUP */
+            max-height: 0 !important;
+            opacity: 0 !important;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            transform: translateY(-10px) !important; /* Efek geser sedikit ke atas */
+            pointer-events: none !important;
+            visibility: hidden !important;
+        }
+
+        /* Pastikan tombol panah juga berputar halus */
+        .toggle-btn {
+            transition: transform 0.4s ease !important;
+        }
+        
+        .toggle-btn.rotated {
+            transform: rotate(180deg) !important;
+        }
+
     </style>
 </head>
 <body>
@@ -667,17 +729,18 @@ path.leaflet-interactive:focus {
 
 <aside class="sidebar-container glass-panel" id="sidebar">
     <div class="sidebar-content">
-        
-<div class="section-header"> 
-    <i class="fas fa-filter" style="color: var(--primary);"></i>
-    <span class="section-title">
-        Filter Data 
-        <span id="labelTahun" style="color: var(--primary); font-weight: 800; margin-left: 4px;">(2026)</span>
-    </span>
-    <button class="toggle-btn rotated" id="btnFilter" onclick="toggleSection('filterBody', 'btnFilter')">
-        <i class="fas fa-chevron-up"></i>
-    </button>
-</div>
+        <div class="section-header" onclick="toggleSection('filterBody', 'btnFilter')"> 
+            <div class="header-left-group">
+                <div class="section-icon-box"><i class="fas fa-filter"></i></div>
+                <div style="display:flex; flex-direction:column;">
+                    <span class="section-title">Filter Data</span>
+                    <span id="labelTahun" style="font-size:10px; color:#2563eb; font-weight:700;">(2026)</span>
+                </div>
+            </div>
+            <button class="toggle-btn rotated" id="btnFilter">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
 
         <div id="filterBody" class="section-body collapsed">
             <div class="filter-group">
@@ -690,17 +753,17 @@ path.leaflet-interactive:focus {
             </div>
 
             <div class="filter-group">
-                <span class="filter-label">Rentang Minggu (Ke-)</span>
+                <span class="filter-label">Rentang Minggu</span>
                 <div class="week-range">
                     <input type="number" id="startWeek" class="input-glass" value="1" min="1" max="52" onchange="updateMap()">
-                    <span style="font-size: 10px; color: var(--text-light); font-weight: 800;">S/D</span>
+                    <span style="font-size: 10px; color: #64748b; font-weight: 800;">-</span>
                     <input type="number" id="endWeek" class="input-glass" value="53" min="1" max="53" onchange="updateMap()">
                 </div>
             </div>
 
             <div class="filter-group">
                 <label class="toggle-row">
-                    <span style="font-size: 13px; font-weight: 600;">Hanya Kasus Positif</span>
+                    <span style="font-size: 12px; font-weight: 600;">Hanya Kasus Positif</span>
                     <label class="switch">
                         <input type="checkbox" id="checkPositif" onchange="updateMap()">
                         <span class="slider"></span>
@@ -709,66 +772,50 @@ path.leaflet-interactive:focus {
             </div>
         </div>
 
-<div style="border-top: 1px solid rgba(0,0,0,0.05); margin: 10px 0;"></div>
+        <div class="glass-divider"></div>
 
-        <div class="section-header" style="margin-bottom: 0;"> 
-            <i class="fas fa-map" style="color: var(--primary);"></i>
-            <span class="section-title" style="font-size: 14px;">Legenda Peta</span>
-            <button class="toggle-btn rotated" id="btnLegend" onclick="toggleSection('legendBody', 'btnLegend')">
+        <div class="section-header" style="margin-bottom: 0;" onclick="toggleSection('legendBody', 'btnLegend')"> 
+            <div class="header-left-group">
+                <div class="section-icon-box"><i class="fas fa-map"></i></div>
+                <span class="section-title">Legenda Peta</span>
+            </div>
+            <button class="toggle-btn rotated" id="btnLegend">
                 <i class="fas fa-chevron-up"></i>
             </button>
         </div>
 
         <div id="legendBody" class="section-body collapsed">
-            <div style="margin-bottom: 15px; padding-top: 15px;">
-                <div class="stat-label" style="margin-bottom: 5px;">Tingkat Kerawanan (Total Kasus)</div>
-                <div class="gradient-legend" style="margin: 5px 0;">
-                    <div class="gradient-bar" style="height: 12px; border-radius: 6px;">
-                        <div class="gradient-fill"></div>
-                    </div>
-                    <div class="gradient-labels" style="font-size: 10px; margin-top: 4px;">
-                        <span>Rendah</span>
-                        <span>Tinggi</span>
-                    </div>
+            <div style="margin-bottom: 12px; padding-top: 10px;">
+                <div class="filter-label" style="margin-bottom: 5px;">Tingkat Kerawanan</div>
+                <div class="gradient-container">
+                    <div class="gradient-bar"></div>
+                </div>
+                <div class="gradient-labels">
+                    <span>Rendah</span><span>Tinggi</span>
                 </div>
             </div>
 
-            <div class="legend-box" style="padding: 0; border: none; background: transparent;">
-                <div class="legend-row">
-                    <div style="width: 24px; display: flex; justify-content: center; align-items: center; margin-right: 10px;">
-                        <div style="background: #10b981; width: 14px; height: 14px; border-radius: 4px;"></div>
-                    </div>
-                    <div class="legend-desc">Zona Aman (0 Kasus)</div>
+            <div class="legend-box">
+                <div class="legend-item">
+                    <div class="legend-icon icon-safe"><i class="fas fa-check"></i></div>
+                    <div class="legend-text">Zona Aman (0 Kasus)</div>
                 </div>
-
-                <div class="legend-row">
-                    <div style="width: 24px; display: flex; justify-content: center; align-items: center; margin-right: 10px;">
-                        <div style="width: 100%; height: 6px; background: #ffffff; border: 1px solid #334155;"></div>
-                    </div>
-                    <div class="legend-desc">Batas Kelurahan</div>
+                <div class="legend-item">
+                    <div class="legend-icon icon-border"></div>
+                    <div class="legend-text">Batas Kelurahan</div>
                 </div>
-
-                <div style="border-top: 1px solid rgba(0,0,0,0.1); margin: 10px 0;"></div>
-
-                <div class="legend-row">
-                    <div style="width: 24px; text-align: center; margin-right: 10px; color: #3b82f6;">
-                        <i class="fas fa-school"></i>
-                    </div>
-                    <div class="legend-desc">Fasilitas Pendidikan</div>
+                <div class="glass-divider" style="margin: 8px 0;"></div>
+                <div class="legend-item">
+                    <div class="legend-icon icon-edu"><i class="fas fa-school"></i></div>
+                    <div class="legend-text">Fasilitas Pendidikan</div>
                 </div>
-
-                <div class="legend-row">
-                    <div style="width: 24px; text-align: center; margin-right: 10px; color: #10b981;">
-                        <i class="fas fa-hospital"></i>
-                    </div>
-                    <div class="legend-desc">Fasilitas Kesehatan</div>
+                <div class="legend-item">
+                    <div class="legend-icon icon-health"><i class="fas fa-hospital"></i></div>
+                    <div class="legend-text">Fasilitas Kesehatan</div>
                 </div>
-
-                <div class="legend-row">
-                    <div style="width: 24px; text-align: center; margin-right: 10px; color: #8b5cf6;">
-                        <i class="fas fa-landmark"></i>
-                    </div>
-                    <div class="legend-desc">Cagar Budaya</div>
+                <div class="legend-item">
+                    <div class="legend-icon icon-culture"><i class="fas fa-landmark"></i></div>
+                    <div class="legend-text">Cagar Budaya</div>
                 </div>
             </div>
         </div> 
