@@ -91,58 +91,66 @@
         }
 
 
-/* --- FILTER STYLING --- */
-        .filter-group { margin-bottom: 20px; }
-        .filter-label { 
-            font-size: 11px; font-weight: 700; color: var(--text-light); 
-            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;
-        }
+          /* --- FILTER STYLING COMPACT --- */
+          .filter-group { margin-bottom: 12px; } /* Jarak antar grup filter lebih rapat */
+          
+          .filter-label { 
+              font-size: 10px;    /* Font label sedikit lebih kecil */
+              font-weight: 700; 
+              color: var(--text-light); 
+              text-transform: uppercase; 
+              letter-spacing: 0.5px; 
+              margin-bottom: 5px; 
+              display: block;
+          }
 
-        /* Year Pills */
-        .year-selector { display: flex; gap: 8px; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); }
-        .year-btn {
-            flex: 1; border: none; background: transparent; padding: 6px 0;
-            font-family: 'Plus Jakarta Sans'; font-size: 12px; font-weight: 600;
-            color: var(--text-light); border-radius: 8px; cursor: pointer; transition: all 0.2s;
-        }
-        .year-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+/* Year Pills (Compact) */
+.year-selector { display: flex; gap: 4px; background: rgba(255,255,255,0.5); padding: 3px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.05); }
+.year-btn {
+    flex: 1; border: none; background: transparent; padding: 4px 0; /* Padding lebih kecil */
+    font-family: 'Plus Jakarta Sans'; font-size: 11px; font-weight: 700;
+    color: var(--text-light); border-radius: 7px; cursor: pointer; transition: all 0.2s;
+}
+.year-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 
-        /* Week Inputs */
-        .week-range { display: flex; align-items: center; gap: 8px; }
-        .input-glass {
-            width: 100%; background: rgba(255,255,255,0.5); border: 1px solid rgba(0,0,0,0.1);
-            padding: 8px 12px; border-radius: 10px; font-family: 'Plus Jakarta Sans'; font-weight: 600;
-            color: var(--text-dark); text-align: center; outline: none; transition: all 0.2s;
-        }
-        .input-glass:focus { background: white; border-color: var(--primary); }
+/* Week Inputs (Compact) */
+.week-range { display: flex; align-items: center; gap: 6px; }
+.input-glass {
+    width: 100%; background: rgba(255,255,255,0.5); border: 1px solid rgba(0,0,0,0.1);
+    padding: 6px 8px; /* Input lebih tipis */
+    font-size: 12px;  /* Font input disesuaikan */
+    border-radius: 8px; font-family: 'Plus Jakarta Sans'; font-weight: 700;
+    color: var(--text-dark); text-align: center; outline: none; transition: all 0.2s;
+}
 
-        /* Toggle Switch */
-        .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; cursor: pointer; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--danger); }
-        input:checked + .slider:before { transform: translateX(18px); }
+/* Toggle Switch (Compact) */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; cursor: pointer; }
+/* Switch diperkecil skalanya */
+.switch { position: relative; display: inline-block; width: 34px; height: 18px; } 
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--danger); }
+input:checked + .slider:before { transform: translateX(16px); }
 
-/* --- GANTI BAGIAN INI --- */
+/* --- SIDEBAR COMPACT --- */
 .sidebar-container {
     position: absolute;
-    top: 20px;          /* Jarak dari atas */
-    left: 20px;         /* Jarak dari kiri */
-    width: 300px;       /* Ukuran pas untuk legenda */
-    height: auto;       /* TINGGI OTOMATIS (Ini kuncinya agar tidak panjang ke bawah) */
-    bottom: auto;       /* Hapus tarikan ke bawah */
-    border-radius: var(--radius-md);
+    top: 15px;          /* Jarak atas dikurangi */
+    left: 15px;         /* Jarak kiri dikurangi */
+    width: 260px;       /* LEBIH RAMPING (dari 300px ke 260px) */
+    height: auto;
+    bottom: auto;
+    border-radius: 16px; /* Radius sedikit dikecilkan agar proporsional */
     z-index: 99;
     display: flex;
     flex-direction: column;
-    overflow: visible;  /* Tidak perlu scroll */
+    overflow: visible;
     transition: transform 0.3s ease;
 }
 
 .sidebar-content {
-    padding: 20px;
+    padding: 15px;      /* Padding dalam lebih kecil (dari 20px ke 15px) */
     overflow: visible;
     height: auto;
     transition: all 0.3s ease;
@@ -212,23 +220,26 @@ section-body {
             color: var(--text-light);
         }
 
-        /* Legend */
-        .legend-box {
-            background: white;
-            border-radius: var(--radius-md);
-            padding: 16px;
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-        
-        .legend-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        /* Bar Gradien untuk Skala Kasus */
+/* Legend Compact */
+.legend-box {
+    background: transparent; /* Hapus background putih agar menyatu */
+    padding: 0;
+    border: none;
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px; /* Jarak antar item legenda dirapatkan (dari 10px ke 6px) */
+}
+
+/* Icon Legenda diperkecil sedikit */
+.legend-row i { font-size: 12px; } 
+.legend-desc { font-size: 12px; font-weight: 500; color: var(--text-dark); }
+
+/* Bar Gradien Compact */
 .gradient-legend {
-    margin: 20px 0;
+    margin: 12px 0; /* Jarak gradien bar dirapatkan */
 }
 
 .gradient-bar {
@@ -477,6 +488,175 @@ path.leaflet-interactive:focus {
     transform: translate(-50%, -50%) scale(1); /* Kembali ke ukuran normal */
 }
 
+/* --- STYLE SIDEBAR KANAN (TOP 3) - PROFESSIONAL HEALTH THEME --- */
+.top-rw-container {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 220px;
+    height: auto;
+    z-index: 99;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    /* Tambahan border halus agar lebih terdefinisi */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.top-rw-header {
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    /* UBAH: Background header lebih putih dan bersih */
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+    transition: background 0.3s;
+}
+
+.top-rw-header:hover {
+    background: rgba(255,255,255,0.95);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* UBAH: Ikon Piala menjadi warna Merah Alert, bukan Emas Judi */
+.virus-icon-bg {
+    width: 32px; height: 32px;
+    /* Gradasi Merah Tua */
+    background: linear-gradient(135deg, #dc2626, #991b1b); 
+    border-radius: 8px; /* Sudut sedikit lebih tajam agar terlihat serius */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    /* Shadow merah halus */
+    box-shadow: 0 4px 6px rgba(220, 38, 38, 0.25);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.header-label { font-size: 9px; text-transform: uppercase; color: var(--text-light); font-weight: 700; letter-spacing: 0.5px; }
+.header-value { font-size: 13px; font-weight: 800; color: var(--text-dark); line-height: 1.1; }
+
+.toggle-btn-right {
+    background: transparent; border: none; color: var(--text-light);
+    transition: transform 0.3s ease; cursor: pointer;
+    padding: 4px;
+}
+.toggle-btn-right.rotated { transform: rotate(180deg); }
+
+/* Body & Animation (TETAP SAMA) */
+.top-rw-body {
+    padding: 0 12px 12px 12px;
+    max-height: 300px;
+    opacity: 1;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    background: rgba(255,255,255,0.4); /* Background body sedikit transparan */
+}
+
+.top-rw-body.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-bottom: 0;
+}
+
+/* Pastikan body bisa di-scroll */
+.top-rw-body {
+    padding: 0 12px 12px 12px;
+    max-height: 400px; /* Saya perbesar sedikit tingginya agar muat lebih banyak */
+    opacity: 1;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Scroll aktif */
+    overflow-y: auto;  
+    overflow-x: hidden;
+    background: rgba(255,255,255,0.4);
+    
+    /* Scrollbar Tipis */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+/* List Items */
+.rank-item {
+    display: flex;
+    align-items: center;
+    /* Background item lebih bersih */
+    background: rgba(255,255,255,0.7);
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    transition: transform 0.2s;
+}
+
+.rank-item:active { transform: scale(0.98); }
+
+/* UBAH: Badge Peringkat menggunakan palet "Danger Severity" */
+.rank-badge {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; color: white;
+    margin-right: 10px; flex-shrink: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* Peringkat 1: Merah Bahaya (Sangat Tinggi) */
+.rank-1 { 
+    background: linear-gradient(135deg, #ef4444, #dc2626); 
+    box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+} 
+
+/* Peringkat 2: Oranye Kemerahan (Tinggi) */
+.rank-2 { 
+    background: linear-gradient(135deg, #f97316, #ea580c); 
+    box-shadow: 0 2px 5px rgba(249, 115, 22, 0.3);
+} 
+
+/* Peringkat 3: Oranye Peringatan (Sedang) */
+.rank-3 { 
+    background: linear-gradient(135deg, #f59e0b, #d97706); 
+    box-shadow: 0 2px 5px rgba(245, 158, 11, 0.3);
+} 
+
+.rank-other { 
+    background: #94a3b8; /* Slate Grey */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.rank-info { flex: 1; display: flex; flex-direction: column; }
+.rank-rw { font-size: 12px; font-weight: 700; color: var(--text-dark); }
+.rank-kel { font-size: 9px; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
+
+/* UBAH: Badge Jumlah Kasus agar lebih tajam dan serius */
+.rank-count {
+    background: white; /* Background putih */
+    color: #dc2626; /* Teks merah tua */
+    padding: 3px 8px; 
+    border-radius: 6px;
+    font-size: 12px; font-weight: 800;
+    border: 1px solid #fecaca; /* Border merah tipis */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
     </style>
 </head>
 <body>
@@ -594,6 +774,29 @@ path.leaflet-interactive:focus {
         </div> 
     </div>
 </aside>
+
+<div class="top-rw-container glass-panel" id="topRWPanel">
+    <div class="top-rw-header" onclick="toggleTopRW()">
+        <div class="header-left">
+            <div class="virus-icon-bg">
+                <i class="fas fa-virus"></i>
+            </div>
+            <div class="header-text">
+                <span class="header-label">Kasus</span>
+                <span class="header-value">Tertinggi</span>
+            </div>
+        </div>
+        <button class="toggle-btn-right rotated" id="btnTopRW">
+            <i class="fas fa-chevron-up"></i>
+        </button>
+    </div>
+
+    <div id="topRWContent" class="top-rw-body collapsed">
+        <div style="padding: 10px; text-align: center; color: var(--text-light); font-size: 11px;">
+            Memuat data...
+        </div>
+    </div>
+</div>
 
     <div class="loader-overlay" id="loader">
         <div class="spinner"></div>
@@ -891,12 +1094,99 @@ path.leaflet-interactive:focus {
 
             // Pastikan Peta Zoom ke data jika ini load pertama
 
-            // Pastikan Peta Zoom ke data jika ini load pertama
+// Pastikan Peta Zoom ke data jika ini load pertama
             if (allDataRows.length > 0 && !window.hasZoomed) {
                 map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
                 window.hasZoomed = true;
             }
+            
+            // --- UPDATE TOP 3 SETELAH PETA DI-RENDER ---
+            updateTop3List(dataStats);
         }
+
+// --- FUNGSI UPDATE LIST KASUS (FULL LIST) ---
+        function updateTop3List(statsData) {
+            // 1. Ubah object stats menjadi array
+            var statsArray = Object.keys(statsData).map(function(key) {
+                var parts = key.split('_'); 
+                var kelName = parts[0].replace(/\b\w/g, l => l.toUpperCase()); 
+                return {
+                    id: key,
+                    kelurahan: kelName,
+                    rw: parts[1],
+                    suspek: statsData[key].suspek
+                };
+            });
+
+            // 2. Urutkan dari Terbesar ke Terkecil
+            statsArray.sort(function(a, b) {
+                return b.suspek - a.suspek;
+            });
+
+            var container = document.getElementById('topRWContent');
+            var htmlContent = '';
+            
+            // Variabel Peringkat
+            var currentRank = 1;
+            
+            // LOOP SEMUA DATA (Tanpa batas jumlah)
+            for (var i = 0; i < statsArray.length; i++) {
+                var item = statsArray[i];
+
+                // Hanya tampilkan yang ada kasusnya (> 0)
+                if (item.suspek > 0) {
+                    
+                    // Logika Peringkat Seri
+                    if (i > 0) {
+                        // Jika kasus SAMA dengan data sebelumnya
+                        if (item.suspek === statsArray[i - 1].suspek) {
+                            // Peringkat TETAP SAMA (Jangan nambah)
+                        } else {
+                            // Jika kasus beda, peringkat bertambah
+                            currentRank++; 
+                        }
+                    } else {
+                        currentRank = 1;
+                    }
+
+                    // Tentukan Kelas CSS untuk Warna Badge
+                    // Rank 1, 2, 3 punya warna khusus. Rank 4 dst pakai warna 'rank-other'
+                    var badgeClass = '';
+                    if (currentRank === 1) badgeClass = 'rank-1';
+                    else if (currentRank === 2) badgeClass = 'rank-2';
+                    else if (currentRank === 3) badgeClass = 'rank-3';
+                    else badgeClass = 'rank-other';
+
+                    htmlContent += `
+                    <div class="rank-item">
+                        <div class="rank-badge ${badgeClass}">${currentRank}</div>
+                        <div class="rank-info">
+                            <span class="rank-rw">RW ${item.rw}</span>
+                            <span class="rank-kel">${item.kelurahan}</span>
+                        </div>
+                        <div class="rank-count">${item.suspek}</div>
+                    </div>
+                    `;
+                }
+            }
+            
+            // Render
+            if (htmlContent === '') {
+                 container.innerHTML = `<div style="padding:10px; text-align:center; font-size:11px; color:#64748b; font-weight:600;">Semua area aman (0 Kasus).</div>`;
+            } else {
+                container.innerHTML = htmlContent;
+            }
+        }
+
+        // --- FUNGSI TOGGLE TOP 3 ---
+        function toggleTopRW() {
+            var body = document.getElementById('topRWContent');
+            var btn = document.getElementById('btnTopRW');
+            body.classList.toggle('collapsed');
+            btn.classList.toggle('rotated');
+        }
+        
+        
 
         // =========================================================================
         // BAGIAN 4: LOAD CSV & RENDER LAPISAN STATIS (BATAS, SEKOLAH, DLL)
@@ -974,7 +1264,7 @@ path.leaflet-interactive:focus {
 
             // C. Marker Manual (Puskesmas & Keraton)
             const markers = [
-                { coords: [-0.027447927, 109.35127436], icon: 'fa-hospital', color: '#10b981', title: 'UPT Puskesmas Kampung Dalam' },
+                { coords: [-0.027447927, 109.35127436], icon: 'fa-hospital', color: '#ff003b', title: 'UPT Puskesmas Kampung Dalam' },
                 { coords: [-0.028725593, 109.35030888], icon: 'fa-landmark', color: '#8b5cf6', title: 'Keraton Kadriyah' }
             ];
             markers.forEach(m => {
@@ -1009,7 +1299,7 @@ path.leaflet-interactive:focus {
             var mapContainer = map.getContainer();
             
             // Ubah angka 15 jika ingin label muncul lebih cepat/lambat
-            if (currentZoom >= 16) { 
+            if (currentZoom >= 17) { 
                 mapContainer.classList.add('show-rw-labels');
             } else {
                 mapContainer.classList.remove('show-rw-labels');
