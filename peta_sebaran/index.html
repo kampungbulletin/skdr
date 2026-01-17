@@ -879,12 +879,17 @@ path.leaflet-interactive:focus {
         // BAGIAN 1: INISIALISASI PETA DASAR
         // =========================================================================
         
-        var map = L.map('map', { 
+var map = L.map('map', { 
             zoomControl: false,
             zoomAnimation: true,
             fadeAnimation: true,
             markerZoomAnimation: true,
-            attributionControl: false
+            attributionControl: false,
+            
+            // --- PENGATURAN ZOOM LEBIH HALUS ---
+            zoomSnap: 0.1,         // Peta bisa berhenti di angka desimal (cth: 14.1, 14.2), jadi tidak patah-patah
+            zoomDelta: 0.5,        // Sekali putar scroll mouse, zoom cuma berubah 0.5 (bukan 1), jadi pelan
+            wheelPxPerZoomLevel: 120 // Butuh scroll lebih panjang untuk naik 1 level (Default 60, kita perberat jadi 120)
         }).setView([-0.027, 109.35], 14);
 
         // Tile Layer (Peta Dasar)
@@ -1264,7 +1269,7 @@ path.leaflet-interactive:focus {
 
             // C. Marker Manual (Puskesmas & Keraton)
             const markers = [
-                { coords: [-0.027447927, 109.35127436], icon: 'fa-hospital', color: '#ff003b', title: 'UPT Puskesmas Kampung Dalam' },
+                { coords: [-0.027447927, 109.35127436], icon: 'fa-hospital', color: '#ff007f', title: 'UPT Puskesmas Kampung Dalam' },
                 { coords: [-0.028725593, 109.35030888], icon: 'fa-landmark', color: '#8b5cf6', title: 'Keraton Kadriyah' }
             ];
             markers.forEach(m => {
